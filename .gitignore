@@ -1,0 +1,9 @@
+?*~
+\#?*#
+.#?*#
+/build/*
+!/build/.empty
+/.cache/
+/.vscode/
+/protos/
+!/protos/?*.idl
