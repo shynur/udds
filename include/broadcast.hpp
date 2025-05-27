@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <chrono>
+#include <cassert>
 #include <unordered_map>
 #include <atomic>
 #include <concepts>
@@ -39,14 +40,14 @@ namespace rbk::udds::broadcast {
      * auto msg = received_from["Some Robot ID"]
      * ```
      */
-    inline auto received_from
-        = [MAX_ROBOTS_UNDER_LAN=100u] {
-            auto received_from = std::unordered_map<
+    inline auto& received_from
+        = [MAX_ROBOTS_UNDER_LAN=10u] -> auto& {
+            static auto received_from = std::unordered_map<
                 std::string,
                 std::atomic<std::shared_ptr<UddsJsonProto>>
             >{};
             received_from.reserve(MAX_ROBOTS_UNDER_LAN);
-            return std::move(received_from);
+            return received_from;
         }();
 
     namespace profile {
