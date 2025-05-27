@@ -4,8 +4,8 @@
 struct UddsJsonProto {
     /*** getters & setters ***/
     auto timestamp() -> double&;       // 消息发布时间
-    auto host_id() -> std::string&;    // 标识小车
-    auto seq_num() -> std::uint32_t&;  // 消息序列号 (随机): 区分同一小车的不同消息
+    auto host() -> std::string&;       // 标识小车
+    auto seq_num() -> std::uint32_t&;  // 消息序列号: 区分同一小车的不同消息
     auto json() -> std::string&;
 };
 ```

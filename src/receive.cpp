@@ -14,7 +14,9 @@ int main() {
     auto received = std::atomic_uint{0};
 
     auto receiver = rbk::udds::Subscriber<
-      UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
+        UddsJsonProto,
+        UddsJsonProtoPubSubType,
+        [] {return "UddsJsonProto";}
     >{
         1, "订阅者的名字", "给 topic 取的名字",
         [iter=std::begin(messages)] mutable -> auto& { return *iter++; },
