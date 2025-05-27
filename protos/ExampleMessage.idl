@@ -1,4 +1,0 @@
-struct ExampleMessage {
-    double timestamp;
-    string txt;
-};

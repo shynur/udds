@@ -4,20 +4,19 @@
 #include <ranges>
 #include <iostream>
 #include <thread>
-#include "../protos/ExampleMessage.hpp"
-#include "../protos/ExampleMessagePubSubTypes.hpp"
+#include "../protos/UddsJsonProto.hpp"
+#include "../protos/UddsJsonProtoPubSubTypes.hpp"
 
 constexpr auto NUM_MSGS = 10u;
 
 int main() {
     auto sender = rbk::udds::Publisher<
-       ExampleMessage, ExampleMessagePubSubType, [] {return "ExampleMessage";}
-       // 没错, 这三个模板参数必须你手写出来, 虽然它们长得几乎一样.
+       UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
     >{1, "发布者的名字", "给 topic 取的名字"};
 
-    auto msg = ExampleMessage{};
+    auto msg = UddsJsonProto{};
     for (const auto i : std::views::iota(0u, NUM_MSGS)) {
-        msg.txt(std::format("第 {} 条消息 嘻嘻", i));
+        msg.json(std::format("第 {} 条消息 嘻嘻", i));
         msg.timestamp(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::system_clock::now().time_since_epoch()

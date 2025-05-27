@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 
 .PHONY: all
-all: build/Makefile include/udds.hpp src/send.cpp src/receive.cpp
+all: build/Makefile include/udds.hpp include/broadcast.hpp src/send.cpp src/receive.cpp
 	cd build; make -j
 
 build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)

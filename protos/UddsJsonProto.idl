@@ -1,0 +1,6 @@
+struct UddsJsonProto {
+    double timestamp;
+    string host_id;
+    unsigned long seq_num;
+    string json;
+};

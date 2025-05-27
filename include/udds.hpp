@@ -17,8 +17,6 @@
 #include <fastdds/dds/topic/TypeSupport.hpp>
 using namespace std::literals;
 
-namespace rbk { namespace udds {} }
-
 namespace rbk::udds {
     /**
      * @tparam proto_t 由 IDL 文件所定义的消息类型 转换为 C++ class 后 的 class 类型.
