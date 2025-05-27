@@ -4,11 +4,10 @@
 #include <cstdint>
 #include <type_traits>
 #include <chrono>
-#include <array>
-#include <vector>
 #include <unordered_map>
+#include <atomic>
 #include <concepts>
-#include <unistd.h>
+#include <memory>
 #include "../protos/UddsJsonProto.hpp"
 #include "../protos/UddsJsonProtoPubSubTypes.hpp"
 
@@ -16,69 +15,95 @@ namespace rbk::udds::broadcast {
 
     constexpr auto DOMAIN_ID = 360u;
     constexpr auto TOPIC_NAME = "broadcast";
-    auto get_participant_name [[gnu::reproducible]] () -> std::string;
 
-    inline auto publisher = Publisher<
-        UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
-    >{
-        DOMAIN_ID,
-        std::format(
-            "{} (as publisher) (PID #{})",
-            get_participant_name(), ::getpid()
-        ),
-        TOPIC_NAME
-    };
+    inline auto publisher = std::unique_ptr<
+        Publisher<
+            UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
+        >
+    >{};
 
-    namespace detail_for_subscriber {
-        constexpr auto BUFFER_SIZE = 4096u;
+    inline auto subscriber = std::unique_ptr<
+        Subscriber<
+            UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
+        >
+    >{};
 
-        alignas(BUFFER_SIZE) inline auto ring_buffer
-            = std::array<UddsJsonProto, BUFFER_SIZE / sizeof(UddsJsonProto)>{};
+    /**
+     * @brief 目前已接收的所有订阅者的消息.
+     *        对于同一订阅者, 只保留它最新一次发布的消息.
+     * @example
+     *
+     * 拿特定小车的消息:
+     *
+     * ```
+     * auto msg = received_from["Some Robot ID"]
+     * ```
+     */
+    inline auto received_from
+        = [MAX_ROBOTS_UNDER_LAN=100u] {
+            auto received_from = std::unordered_map<
+                std::string,
+                std::atomic<std::shared_ptr<UddsJsonProto>>
+            >{};
+            received_from.reserve(MAX_ROBOTS_UNDER_LAN);
+            return std::move(received_from);
+        }();
 
-        auto messages_by_seq_num
-            = std::unordered_map<std::uint32_t, std::vector<UddsJsonProto *>>{};
+    namespace profile {
+        inline std::string self_robot_id;
     }
-    inline auto subscriber = Subscriber<
-        UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
-    >{
-        DOMAIN_ID,
-        std::format(
-            "{} (as subscriber) (PID #{})",
-            get_participant_name(), ::getpid()
-        ),
-        TOPIC_NAME,
-        [i=0u, &ring_buffer=detail_for_subscriber::ring_buffer] mutable -> UddsJsonProto& {
-            return ring_buffer[i++ % std::size(ring_buffer)];
-        },
-        [&messages_by_seq_num=detail_for_subscriber::messages_by_seq_num](
-            UddsJsonProto& message
-        ) {
-            messages_by_seq_num;
-        }
-    };
 
+    /**
+     * @brief 初始化广播系统.  要使用 udds::broadcast, 必须首先调用此函数.
+     * @warning 应当仅调用一次.
+     */
+    inline auto init(const std::string& self_robot_id) {
+        profile::self_robot_id = self_robot_id;
 
-    template <typename std_string>
-    requires std::same_as<std::string, std::decay_t<std_string>>
-    auto send(
-        const std::uint32_t seq_num, std_string&& json
-    ) {
-        auto message = UddsJsonProto{};
+        publisher.reset(
+            new std::decay_t<decltype(*publisher)>{
+                DOMAIN_ID,
+                std::format(
+                    "{} (as publisher)",
+                    self_robot_id
+                ),
+                TOPIC_NAME
+            }
+        );
+        subscriber.reset(
+            new std::decay_t<decltype(*subscriber)>{
+                DOMAIN_ID,
+                std::format(
+                    "{} (as subscriber)",
+                    self_robot_id
+                ),
+                TOPIC_NAME,
+                [] -> UddsJsonProto& {
+                    return *new UddsJsonProto;
+                },
+                [&](UddsJsonProto& message) {
+                    received_from[message.robot_id()]
+                        = std::shared_ptr<UddsJsonProto>{&message};
+                }
+            }
+        );
+    }
 
-        message.seq_num(seq_num);
-        message.json(std::forward<decltype(json)>(json));
-        message.host(get_participant_name());
+    /**
+     * @brief 向局域网中目前已经被发现的订阅者广播消息.
+     * @param message 要广播的消息.
+     *                message 的 timestamp / robot_id 字段会被自动设置.
+     * @return 仅当没有订阅者时返回 false.
+     */
+    auto send(auto&& message) requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
+        message.robot_id(profile::self_robot_id);
+
         message.timestamp(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()
-            ).count() / 1e9
+            ).count()
         );
 
-        return publisher.publish(message);
-    }
-
-
-    inline auto receive_all(const std::uint32_t seq_num) {
-
+        return publisher->publish(message);
     }
 }

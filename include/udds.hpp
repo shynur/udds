@@ -99,7 +99,7 @@ namespace rbk::udds {
             ) and (
                 this->publisher
                 = this->participant->create_publisher(
-                    eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT, nullptr
+                    eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT
                 )
             ) and (
                 this->writer
@@ -254,7 +254,7 @@ namespace rbk::udds {
             ) and (
                 this->subscriber
                 = this->participant->create_subscriber(
-                    eprosima::fastdds::dds::SUBSCRIBER_QOS_DEFAULT, nullptr
+                    eprosima::fastdds::dds::SUBSCRIBER_QOS_DEFAULT
                 )
             ) and (
                 this->reader

@@ -1,39 +1,16 @@
-#include "udds.hpp"
-#include <ranges>
-#include <vector>
-#include <thread>
+#include "broadcast.hpp"
 #include <iostream>
-#include <format>
-#include "../protos/UddsJsonProto.hpp"
-#include "../protos/UddsJsonProtoPubSubTypes.hpp"
+#include <thread>
+#include <chrono>
+#include <cstdlib>
 
-constexpr auto NUM_MSGS = 10u;
+int main(int, const char *argv[]) {
+    rbk::udds::broadcast::init(argv[1]);  // 设置 robot_id
 
-int main() {
-    auto messages = std::vector(NUM_MSGS, UddsJsonProto{});
-    auto received = std::atomic_uint{0};
+    while (std::getchar()) {
+        std::cout << "收到了 " << std::size(rbk::udds::broadcast::received_from)
+                  << " 个订阅者的消息" << '\n';
 
-    auto receiver = rbk::udds::Subscriber<
-        UddsJsonProto,
-        UddsJsonProtoPubSubType,
-        [] {return "UddsJsonProto";}
-    >{
-        1, "订阅者的名字", "给 topic 取的名字",
-        [iter=std::begin(messages)] mutable -> auto& { return *iter++; },
-        [&](const UddsJsonProto& msg) {
-            std::thread{
-                [&] {
-                    std::cerr << std::format(
-                        "{{ 时间: {}, 文本: \"{}\" }}\n",
-                        msg.timestamp(), msg.json()
-                    );
-                    received++;
-                }
-            }.detach();
-        }
-    };
 
-    while (received < NUM_MSGS)
-        std::this_thread::sleep_for(100ms);
-    std::this_thread::sleep_for(100ms);
+    }
 }
