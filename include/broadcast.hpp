@@ -146,6 +146,11 @@ namespace rbk::udds::broadcast {
             TOPIC_NAME
         };
         publisher = &publisher_singleton;
+        {
+            static struct publisher_resetter {
+                ~publisher_resetter() { publisher = nullptr; }
+            } _;
+        }
 
         static auto subscriber_singleton = std::decay_t<decltype(*subscriber)>{
             DOMAIN_ID,
@@ -163,6 +168,11 @@ namespace rbk::udds::broadcast {
             }
         };
         subscriber = &subscriber_singleton;
+        {
+            static struct subscriber_resetter {
+                ~subscriber_resetter() { subscriber = nullptr; }
+            } _;
+        }
     }
 
     /**
