@@ -73,7 +73,7 @@ namespace rbk::udds::broadcast {
                     return std::forward_list<const std::string *>{
                         std::from_range,
                         this->messages | std::views::keys | std::views::transform(
-                            [](const auto& k) { return std::addressof(k); }
+                            [](const auto& key) { return std::addressof(key); }
                         )
                     };
                 }
@@ -131,7 +131,7 @@ namespace rbk::udds::broadcast {
     }
 
     /**
-     * @brief 初始化广播系统.  要使用 udds::broadcast, 必须首先调用此函数.
+     * @brief 初始化广播系统.  要使用 `udds::broadcast`, 必须首先调用此函数.
      * @warning 应当仅调用一次.
      */
     inline auto init(const std::string& self_robot_id) {
@@ -159,10 +159,10 @@ namespace rbk::udds::broadcast {
                 self_robot_id
             ),
             TOPIC_NAME,
-            [] -> UddsJsonProto& {
+            [] noexcept -> UddsJsonProto& {
                 return *new UddsJsonProto;
             },
-            [&](UddsJsonProto& message) {
+            [](UddsJsonProto& message) {
                 _received_from[message.robot_id()]
                     = std::shared_ptr<UddsJsonProto>{&message};
             }
