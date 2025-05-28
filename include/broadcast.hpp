@@ -169,7 +169,6 @@ namespace rbk::udds::broadcast {
      * @brief 向局域网中目前已经被发现的订阅者广播消息.
      * @param message 要广播的消息.
      *                message 的 timestamp / robot_id / delay 字段会被自动设置.
-     * @return 仅当没有订阅者时返回 false.
      */
     auto send(auto&& message) requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
         message.robot_id(profile::self_robot_id);
@@ -180,6 +179,6 @@ namespace rbk::udds::broadcast {
             ).count()
         );
 
-        return publisher->publish(message);
+        publisher->publish(message);
     }
 }
