@@ -21,19 +21,15 @@ namespace rbk::udds::broadcast {
     constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";
 
-    inline auto publisher = std::unique_ptr<
-        Publisher<
-            UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
-        >
-    >{};
+    Publisher<
+        UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
+    > *publisher [[indeterminate]];
 
-    inline auto subscriber = std::unique_ptr<
-        Subscriber<
-            UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
-        >
-    >{};
+    Subscriber<
+        UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
+    > *subscriber [[indeterminate]];
 
-    inline auto received_from_
+    inline auto _received_from
         = [] {
             class Messages_From_Robots {
                 std::unordered_map<std::string, std::shared_ptr<UddsJsonProto>> messages;
@@ -111,7 +107,7 @@ namespace rbk::udds::broadcast {
      * auto msg = received_from["Some Robot ID"]
      * ```
      */
-    inline const auto& received_from = received_from_;
+    inline const auto& received_from = _received_from;
 
     namespace profile {
         inline std::string self_robot_id;
@@ -124,33 +120,32 @@ namespace rbk::udds::broadcast {
     inline auto init(const std::string& self_robot_id) {
         profile::self_robot_id = self_robot_id;
 
-        publisher.reset(
-            new std::decay_t<decltype(*publisher)>{
-                DOMAIN_ID,
-                std::format(
-                    "{} (as publisher)",
-                    self_robot_id
-                ),
-                TOPIC_NAME
+        static auto publisher_singleton = std::decay_t<decltype(*publisher)>{
+            DOMAIN_ID,
+            std::format(
+                "{} (as publisher)",
+                self_robot_id
+            ),
+            TOPIC_NAME
+        };
+        publisher = &publisher_singleton;
+
+        static auto subscriber_singleton = std::decay_t<decltype(*subscriber)>{
+            DOMAIN_ID,
+            std::format(
+                "{} (as subscriber)",
+                self_robot_id
+            ),
+            TOPIC_NAME,
+            [] -> UddsJsonProto& {
+                return *new UddsJsonProto;
+            },
+            [&](UddsJsonProto& message) {
+                _received_from[message.robot_id()]
+                    = std::shared_ptr<UddsJsonProto>{&message};
             }
-        );
-        subscriber.reset(
-            new std::decay_t<decltype(*subscriber)>{
-                DOMAIN_ID,
-                std::format(
-                    "{} (as subscriber)",
-                    self_robot_id
-                ),
-                TOPIC_NAME,
-                [] -> UddsJsonProto& {
-                    return *new UddsJsonProto;
-                },
-                [&](UddsJsonProto& message) {
-                    received_from_[message.robot_id()]
-                        = std::shared_ptr<UddsJsonProto>{&message};
-                }
-            }
-        );
+        };
+        subscriber = &subscriber_singleton;
     }
 
     /**
