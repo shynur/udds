@@ -11,7 +11,7 @@ rbk::udds::broadcast::init(
 );
 ```
 
-(只要 **进程** 之间的 `robot_id` 不同, 这些进程就都可以加入到广播系统中, 所以一台车可以加好几个进程进去.)
+(只要 **进程** 之间的 `robot_id` 不同, 这些进程就都可以加入到广播系统中, 所以一台车可以加好几个进程到广播系统中.)
 
 广播系统的参与者数量没有上限.
 
@@ -33,7 +33,7 @@ struct UddsJsonProto {
 
 ## 发布
 
-向局域网中目前已经被发现的订阅者广播消息:
+向局域网中目前已经被本进程发现的参与者广播消息:
 
 ```C++
 auto message = UddsJsonProto{};
@@ -49,7 +49,7 @@ send(message);
 ## 订阅
 
 Broadcast 模块把收到的最新的消息存储在 `rbk::udds::broadcast::received_from` 中.
-它只保留每个发布者最新的消息.
+它只保留来自每个参与者的最新的消息.
 
 ### 统计消息数量
 
@@ -57,14 +57,14 @@ Broadcast 模块把收到的最新的消息存储在 `rbk::udds::broadcast::rece
 std::size(rbk::udds::broadcast::received_from)
 ```
 
-### 判断是否有来自指定小车的消息
+### 判断是否有来自指定参与者的消息
 
 ```C++
 bool received_from_car_ROBOID =
     rbk::udds::broadcast::received_from.contains("ROBOID");
 ```
 
-### 获取来自指定小车的消息
+### 获取来自指定参与者的消息
 
 ```C++
 try {
@@ -88,15 +88,14 @@ std::cout << msg_by_ROBOID->timestamp() << '\n'
           << msg_by_ROBOID->json() << '\n' // ... ...
 ```
 
-## 列出发布过消息的小车的名单
+## 列出发布过消息的参与者的名单
 
 ```C++
-auto robots = rbk::udds::broadcast::received_from.keys();
-for (auto robot_id : robots)
+for (auto robot_id : rbk::udds::broadcast::received_from.keys())
     std::cout << *robot_id << '\n';
 ```
 
-## loop
+## loop (最常用)
 
 ```C++
 for (auto [robot_id, msg] : rbk::udds::broadcast::received_from) {
