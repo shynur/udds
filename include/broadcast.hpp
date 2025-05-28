@@ -35,10 +35,20 @@ namespace rbk::udds::broadcast {
                 std::unordered_map<std::string, std::shared_ptr<UddsJsonProto>> messages;
                 mutable std::shared_mutex mutex;
               public:
+                /**
+                 * @brief 是否包含特定小车的消息.
+                 */
                 auto contains(const std::string& robot_id) const {
                     auto _ = std::shared_lock{this->mutex};
                     return this->messages.contains(robot_id);
                 }
+                /**
+                 * @brief 获取 最近一次接收到的 来自特定小车的 消息.
+                 * @param robot_id 小车的 ID.  `this->contains(robot_id)` 必须为 true.
+                 * @return 返回指向消息的 shared_ptr.
+                 * @note 请将 shared_ptr 拷贝给其它变量后再通过 shared_ptr 访问消息,
+                 *       以避免数据竞争.
+                 */
                 auto operator[](const std::string& robot_id) const {
                     auto _ = std::shared_lock{this->mutex};
                     return this->messages.at(robot_id);
@@ -47,10 +57,17 @@ namespace rbk::udds::broadcast {
                     auto _ = std::unique_lock{this->mutex};
                     return this->messages[robot_id];
                 }
+                /**
+                 * @brief 收到了几台小车的消息, or 目前持有几条消息.
+                 */
                 auto size() const {
                     auto _ = std::shared_lock{this->mutex};
                     return std::size(this->messages);
                 }
+                /**
+                 * @brief 列出目前已经收到的消息的发件人的 robot_id
+                 *        (其实是指向 robot_id 的指针).
+                 */
                 auto keys() const {
                     auto _ = std::shared_lock{this->mutex};
                     return std::forward_list<const std::string *>{
@@ -61,6 +78,13 @@ namespace rbk::udds::broadcast {
                     };
                 }
 
+                /**
+                 * @brief 截至调用该函数时, 我们已知有哪些发件人.
+                 *        在返回的迭代器上迭代, 每次解引用得到一个 pair
+                 *        (指向发件人 robot_id 的指针, 指向消息的 shared_ptr).
+                 *        如果在迭代过程中, 有已知的小车更新了消息, 迭代器会同步更新;
+                 *        如果在迭代过程中, 有新的小车发送了消息, 这台新车不会被考虑加入到当前的迭代范围中.
+                 */
                 auto begin() const {
                     class const_iterator {
                         const Messages_From_Robots& messages_from;
@@ -98,14 +122,7 @@ namespace rbk::udds::broadcast {
         }();
     /**
      * @brief 目前已接收的所有订阅者的消息.
-     *        对于同一订阅者, 只保留它最新一次发布的消息.
-     * @example
-     *
-     * 拿特定小车的消息:
-     *
-     * ```
-     * auto msg = received_from["Some Robot ID"]
-     * ```
+     *        对于同一订阅者, 只保留最近一次来自它的消息.
      */
     inline const auto& received_from = _received_from;
 
@@ -151,7 +168,7 @@ namespace rbk::udds::broadcast {
     /**
      * @brief 向局域网中目前已经被发现的订阅者广播消息.
      * @param message 要广播的消息.
-     *                message 的 timestamp / robot_id 字段会被自动设置.
+     *                message 的 timestamp / robot_id / delay 字段会被自动设置.
      * @return 仅当没有订阅者时返回 false.
      */
     auto send(auto&& message) requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
