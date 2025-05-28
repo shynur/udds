@@ -7,5 +7,8 @@ int main(int, const char *argv[]) {
     auto msg = UddsJsonProto{};
 
     while (std::cin >> msg.json())
-        rbk::udds::broadcast::send(msg);
+        if (msg.json() == "q")
+            break;
+        else
+            rbk::udds::broadcast::send(msg);
 }

@@ -4,6 +4,7 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#include <cstdint>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/publisher/DataWriter.hpp>
@@ -70,12 +71,10 @@ namespace rbk::udds {
          * @param topic_name topic 的 name.  不需要和 proto 定义时的类型名字相同, 随便写一个就行.  (看日志的时候有用.)
          */
         Publisher(
-            const unsigned domain_id,
+            const std::uint8_t domain_id,
             const std::string participant_name,
             const std::string topic_name
         ): type{new proto_pub_sub_t} {
-            assert(domain_id >= 1);  // TODO: 可以等于 0 吗?
-
             const bool successfully_inited = (
                 this->participant
                 = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
@@ -217,7 +216,7 @@ namespace rbk::udds {
          *                          都会同步调用它.  因此需要保证该 callback 的调用是足够迅速的.
          */
         Subscriber(
-            const unsigned domain_id,
+            const std::uint8_t domain_id,
             const std::string participant_name,
             const std::string topic_name,
             std::invocable<> auto&& message_locator,
@@ -229,8 +228,6 @@ namespace rbk::udds {
             std::forward<decltype(message_locator)>(message_locator),
             std::forward<decltype(message_processor)>(message_processor)
         } {
-            assert(domain_id >= 1);  // TODO: 可以等于 0 吗?
-
             const bool successfully_inited = (
                 this->participant
                 = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()

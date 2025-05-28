@@ -7,10 +7,52 @@
 int main(int, const char *argv[]) {
     rbk::udds::broadcast::init(argv[1]);  // 设置 robot_id
 
-    while (std::getchar()) {
-        std::cout << "收到了 " << std::size(rbk::udds::broadcast::received_from)
-                  << " 个订阅者的消息" << '\n';
-
-
+    while (true) {
+        char choice;
+        std::cout << "\n"
+                     "1) 打印 size\n"
+                     "2) 打印所有消息的发件人\n"
+                     "3) 是否收到了某个小车的消息\n"
+                     "4) 打印来自某个小车的消息\n"
+                     "5) 遍历\n";
+        std::cin >> choice;
+        std::cout << '\n';
+        switch (choice) {
+            case '1':
+                std::cout << std::size(rbk::udds::broadcast::received_from) << '\n';
+                break;
+            case '2':
+                for (const auto& robot_id : rbk::udds::broadcast::received_from.keys())
+                    std::cout << *robot_id << '\n';
+                break;
+            case '3': {
+                    std::string robot_id;
+                    std::cout << "请输入小车 ID: ";
+                    std::cin >> robot_id;
+                    std::cout << (rbk::udds::broadcast::received_from.contains(robot_id)
+                                  ? "是的, 收到了.\n"
+                                  : "没有收到.\n");
+                }
+                break;
+            case '4': {
+                    std::string robot_id;
+                    std::cout << "请输入小车 ID: ";
+                    std::cin >> robot_id;
+                    std::cout << "时间戳: "
+                              << rbk::udds::broadcast::received_from[robot_id]->timestamp() << '\n'
+                              << "JSON: "
+                              << rbk::udds::broadcast::received_from[robot_id]->json() << '\n';
+                }
+                break;
+            case '5':
+                for (auto [robot_id, message] : rbk::udds::broadcast::received_from)
+                    std::cout << "小车 ID: " << *robot_id << '\n'
+                              << "时间戳: " << message->timestamp() << '\n'
+                              << "JSON: " << message->json() << "\n\n";
+                break;
+            default:
+                return {};
+        }
+        std::cout << '\n';
     }
 }

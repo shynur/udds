@@ -4,9 +4,13 @@
 #include <cstdint>
 #include <type_traits>
 #include <chrono>
+#include <ranges>
+#include <iterator>
+#include <utility>
 #include <cassert>
+#include <shared_mutex>
 #include <unordered_map>
-#include <atomic>
+#include <forward_list>
 #include <concepts>
 #include <memory>
 #include "../protos/UddsJsonProto.hpp"
@@ -14,7 +18,7 @@
 
 namespace rbk::udds::broadcast {
 
-    constexpr auto DOMAIN_ID = 360u;
+    constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";
 
     inline auto publisher = std::unique_ptr<
@@ -29,6 +33,73 @@ namespace rbk::udds::broadcast {
         >
     >{};
 
+    inline auto received_from_
+        = [] {
+            class Messages_From_Robots {
+                std::unordered_map<std::string, std::shared_ptr<UddsJsonProto>> messages;
+                mutable std::shared_mutex mutex;
+              public:
+                auto contains(const std::string& robot_id) const {
+                    auto _ = std::shared_lock{this->mutex};
+                    return this->messages.contains(robot_id);
+                }
+                auto operator[](const std::string& robot_id) const {
+                    auto _ = std::shared_lock{this->mutex};
+                    return this->messages.at(robot_id);
+                }
+                auto& operator[](const std::string& robot_id) {
+                    auto _ = std::unique_lock{this->mutex};
+                    return this->messages[robot_id];
+                }
+                auto size() const {
+                    auto _ = std::shared_lock{this->mutex};
+                    return std::size(this->messages);
+                }
+                auto keys() const {
+                    auto _ = std::shared_lock{this->mutex};
+                    return std::forward_list<const std::string *>{
+                        std::from_range,
+                        this->messages | std::views::keys | std::views::transform(
+                            [](const auto& k) { return std::addressof(k); }
+                        )
+                    };
+                }
+
+                auto begin() const {
+                    class const_iterator {
+                        const Messages_From_Robots& messages_from;
+                        const std::forward_list<const std::string *> keys_snapshot;
+                        std::forward_list<const std::string *>::const_iterator key_iter;
+
+                        friend Messages_From_Robots;
+                        const_iterator(const Messages_From_Robots& messages_from)
+                        : messages_from{messages_from},
+                          keys_snapshot{messages_from.keys()},
+                          key_iter{std::cbegin(keys_snapshot)} {}
+
+                      public:
+                        auto& operator++() {
+                            assert(this->key_iter != std::cend(this->keys_snapshot));
+                            ++this->key_iter;
+                            return *this;
+                        }
+                        auto operator*() const {
+                            assert(this->key_iter != std::cend(this->keys_snapshot));
+                            return std::pair{
+                                *this->key_iter,
+                                this->messages_from[**this->key_iter],
+                            };
+                        }
+                        auto operator!=(const std::default_sentinel_t&) const {
+                            return this->key_iter != std::cend(this->keys_snapshot);
+                        }
+                    };
+                    return const_iterator{*this};
+                }
+                static auto end() { return std::default_sentinel; }
+            };
+            return Messages_From_Robots{};
+        }();
     /**
      * @brief 目前已接收的所有订阅者的消息.
      *        对于同一订阅者, 只保留它最新一次发布的消息.
@@ -40,15 +111,7 @@ namespace rbk::udds::broadcast {
      * auto msg = received_from["Some Robot ID"]
      * ```
      */
-    inline auto& received_from
-        = [MAX_ROBOTS_UNDER_LAN=10u] -> auto& {
-            static auto received_from = std::unordered_map<
-                std::string,
-                std::atomic<std::shared_ptr<UddsJsonProto>>
-            >{};
-            received_from.reserve(MAX_ROBOTS_UNDER_LAN);
-            return received_from;
-        }();
+    inline const auto& received_from = received_from_;
 
     namespace profile {
         inline std::string self_robot_id;
@@ -83,7 +146,7 @@ namespace rbk::udds::broadcast {
                     return *new UddsJsonProto;
                 },
                 [&](UddsJsonProto& message) {
-                    received_from[message.robot_id()]
+                    received_from_[message.robot_id()]
                         = std::shared_ptr<UddsJsonProto>{&message};
                 }
             }
