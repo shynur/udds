@@ -88,14 +88,14 @@ std::cout << msg_by_ROBOID->timestamp() << '\n'
           << msg_by_ROBOID->json() << '\n' // ... ...
 ```
 
-## 列出发布过消息的参与者的名单
+### 列出发布过消息的参与者的名单
 
 ```C++
 for (auto robot_id : rbk::udds::broadcast::received_from.keys())
     std::cout << *robot_id << '\n';
 ```
 
-## loop (最常用)
+### loop (最常用)
 
 ```C++
 for (auto [robot_id, msg] : rbk::udds::broadcast::received_from) {
