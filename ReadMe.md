@@ -105,3 +105,7 @@ for (auto [robot_id, msg] : rbk::udds::broadcast::received_from) {
     // ... 处理消息 ...
 }
 ```
+
+- 如果在 loop 时有消息被 **更新** 了, 且被更新的消息的发信人 (`robot_id`) 还没有被迭代到,
+  则该更新会同步到 loop 未完成的循环中.
+- 如果 loop 时有消息被 *添加* 到 `received_from` 中, 这不会被当前的 loop 观察到.
