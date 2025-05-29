@@ -1,3 +1,5 @@
+/* source code: <https://github.com/shynur/udds> */
+#pragma once
 #include <atomic>
 #include <concepts>
 #include <cassert>
