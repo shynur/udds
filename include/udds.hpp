@@ -205,7 +205,9 @@ namespace rbk::udds {
                     if (info.valid_data) {
                         this->message_processor(*message);
                         message.release();
+                        return;
                     }
+                std::cerr << "监听到有数据到来, 但未能成功读取.\n";
             }
         } reader_listener;
 
