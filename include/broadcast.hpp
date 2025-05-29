@@ -159,8 +159,8 @@ namespace rbk::udds::broadcast {
                 self_robot_id
             ),
             TOPIC_NAME,
-            [] noexcept -> UddsJsonProto& {
-                return *new UddsJsonProto;
+            [] noexcept {
+                return std::make_unique<UddsJsonProto>();
             },
             [](UddsJsonProto& message) {
                 _received_from[message.robot_id()]

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <format>
 #include <functional>
+#include <memory>
 #include <iostream>
 #include <cstdint>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
@@ -162,12 +163,14 @@ namespace rbk::udds {
         eprosima::fastdds::dds::Topic *topic = nullptr;
         eprosima::fastdds::dds::TypeSupport type;
         struct ReaderListener: eprosima::fastdds::dds::DataReaderListener {
-            std::move_only_function<proto_t&()> message_locator;
+            std::move_only_function<
+                std::unique_ptr<proto_t, std::function<void(proto_t *)>>()
+            > message_locator;
             std::move_only_function<void(proto_t&)> message_processor;
 
             ReaderListener(
-                std::move_only_function<proto_t&()> message_locator,
-                std::move_only_function<void(proto_t&)> message_processor
+                decltype(ReaderListener::message_locator) message_locator,
+                decltype(ReaderListener::message_processor) message_processor
             ): message_locator{std::move(message_locator)},
                message_processor{std::move(message_processor)} {}
 
@@ -191,16 +194,18 @@ namespace rbk::udds {
                         assert(false);
                 }
             }
-            void on_data_available(eprosima::fastdds::dds::DataReader *reader) override {
+            void on_data_available(eprosima::fastdds::dds::DataReader *const reader) override {
                 auto info = eprosima::fastdds::dds::SampleInfo{};
-                auto& message = this->message_locator();
+                auto message = this->message_locator();
 
                 if (
-                    reader->take_next_sample(&message, &info)
+                    reader->take_next_sample(std::to_address(message), &info)
                     == eprosima::fastdds::dds::RETCODE_OK
                 )
-                    if (info.valid_data)
-                        this->message_processor(message);
+                    if (info.valid_data) {
+                        this->message_processor(*message);
+                        message.release();
+                    }
             }
         } reader_listener;
 
@@ -209,9 +214,12 @@ namespace rbk::udds {
          * @param domain_id 发布订阅的 domain, 同一个 domain 之间的 topic 是可见的.
          * @param participant_name subscriber 的 name.  (看日志的时候有用.)
          * @param topic_name topic 的 name.  不需要和 proto 定义时的类型名字相同, 随便写一个就行.  (看日志的时候有用.)
-         * @param message_locator 一个 callback, 返回 message 的引用, 然后 reader 会把接收到的消息
-         *                        填充到这个引用中.  Reader 每次接收到消息都会同步调用它, 因此
-         *                        需要保证该 callback 的调用是足够迅速的.
+         * @param message_locator 一个 callback, 返回 `std::unique_ptr<proto_t, deleter_type>`.
+         *                        Reader 会把接收到的消息填充到 `*unique_ptr`.  Reader 每次发现
+         *                        有新消息到来, 都会同步调用它, 因此需要保证该 callback 的调用是
+         *                        足够迅速的.
+         *                        如果成功向 `*unique_ptr` 填充了消息, 则 unique_ptr 释放所有权,
+         *                        使得消息保留在内存中; 否则, 调用 `deleter_type`.
          * @param message_processor 一个 callback, 接收一个 proto_t 的引用.  每次 reader 接收到消息后
          *                          都会同步调用它.  因此需要保证该 callback 的调用是足够迅速的.
          */
@@ -221,9 +229,11 @@ namespace rbk::udds {
             const std::string topic_name,
             std::invocable<> auto&& message_locator,
             std::invocable<proto_t&> auto&& message_processor
-        ) requires requires{
-            { message_locator() } -> std::same_as<proto_t&>;
-        }: type{new proto_pub_sub_t},
+        ) requires requires {
+            std::unique_ptr{message_locator()};
+            requires std::is_same_v<proto_t, typename decltype(message_locator())::element_type>;
+        }
+        : type{new proto_pub_sub_t},
            reader_listener{
             std::forward<decltype(message_locator)>(message_locator),
             std::forward<decltype(message_processor)>(message_processor)
