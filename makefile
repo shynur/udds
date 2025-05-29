@@ -10,7 +10,7 @@ build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)
 	for f_idl in *.idl; do  \
 		fastddsgen $$f_idl;  \
 	done
-	cd build; cmake ..
+	mkdir -p build; cd build; cmake ..
 
 .PHONY: clean
 clean:
@@ -18,7 +18,7 @@ clean:
 	for f_idl in *.idl; do  \
 		rm -f $${f_idl%.idl}{.hpp,CdrAux.{hpp,ipp},{PubSubTypes,TypeObjectSupport}.{cxx,hpp}};  \
 	done
-	rm -rf build; mkdir -p build; touch build/.empty
+	rm -rf build
 	shopt -s globstar; rm -f ./**/?*~ ./**/.?*~
 
 .PHONY: git

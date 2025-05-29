@@ -2,8 +2,7 @@
 \#?*#
 .#?*#
 
-/build/*
-!/build/.empty
+/build/
 
 /.cache/
 
