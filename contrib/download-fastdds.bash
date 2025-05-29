@@ -22,5 +22,5 @@ echo
 echo -n '是否要立即执行 installer?  (y/n) '
 read
 if [ "$REPLY" = y ]; then
-    sudo ./fast-dds.installer.d/install.sh
+    sudo ./fast-dds.installer.d/install.sh --build-cores `nproc` --no-security
 fi
