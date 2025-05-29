@@ -38,16 +38,15 @@ int main(int, const char *argv[]) {
                     std::string robot_id;
                     std::cout << "请输入小车 ID: ";
                     std::cin >> robot_id;
-                    std::cout << "时间戳: "
-                              << rbk::udds::broadcast::received_from[robot_id]->timestamp() << '\n'
-                              << "JSON: "
+                    std::cout << "JSON: "
                               << rbk::udds::broadcast::received_from[robot_id]->json() << '\n';
                 }
                 break;
             case '5':
                 for (auto [robot_id, message] : rbk::udds::broadcast::received_from)
                     std::cout << "小车 ID: " << *robot_id << '\n'
-                              << "时间戳: " << message->timestamp() << '\n'
+                              << "发送时间: " << message->send_timestamp_ns() << '\n'
+                              << "延迟: " << message->received_timestamp_ns() - message->send_timestamp_ns() << " ns\n"
                               << "JSON: " << message->json() << "\n\n";
                 break;
             default:

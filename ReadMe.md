@@ -19,8 +19,10 @@ rbk::udds::broadcast::init(
 
 ```C++
 struct UddsJsonProto {
-    auto timestamp() -> u64&;  // 发布时的时间/纳秒
-    auto delay() -> u64&;      // 网络延迟/纳秒
+    // 发布时间 (相对于发布者的 clock):
+    auto send_timestamp_ns() -> u64&;
+    // 接收时间 (相对于接收者的 clock):
+    auto received_timestamp_ns() -> u64&;
 
     auto robot_id() -> string&;
     auto x() -> double&;
@@ -40,11 +42,12 @@ auto message = UddsJsonProto{};
 
 // 设置消息内容.  例如:
 message.json() = "[1,2,3]";
+// 每个字段都是可选的; 只设置你关心的字段.
 
-send(message);
+rbk::udds::broadcast::send(message);
 ```
 
-`message` 的 `timestamp` / `delay` / `robot_id` 字段会被自动设置.
+`message` 的 `send_timestamp_ns` / `received_timestamp_ns` / `robot_id` 字段会被自动设置.
 
 ## 订阅
 
@@ -99,10 +102,8 @@ for (auto robot_id : rbk::udds::broadcast::received_from.keys())
 
 ```C++
 for (auto [robot_id, msg] : rbk::udds::broadcast::received_from) {
-    std::cout << *robot_id << ": \n"
-              << msg->timestamp() << '\n'
-              << msg->json() << '\n';
-    // ... 处理消息 ...
+    std::cout << "小车名字: " << *robot_id << '\n'
+              << "消息内容: " << msg->json() << '\n';
 }
 ```
 

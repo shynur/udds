@@ -1,6 +1,8 @@
 struct UddsJsonProto {
-    unsigned long long timestamp;  // 发布时的时间/纳秒
-    unsigned long long delay;      // 网络延迟/纳秒
+    // 发布时间 (相对于发布者的 clock):
+    unsigned long long send_timestamp_ns;
+    // 接收时间 (相对于接收者的 clock):
+    unsigned long long received_timestamp_ns;
 
     string robot_id;
     double x;

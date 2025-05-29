@@ -34,7 +34,7 @@ namespace rbk::udds::broadcast {
     inline auto _received_from
         = [] {
             class Messages_From_Robots {
-                std::unordered_map<std::string, std::shared_ptr<UddsJsonProto>> messages;
+                std::unordered_map<std::string, std::shared_ptr<const UddsJsonProto>> messages;
                 mutable std::shared_mutex mutex;
               public:
                 /**
@@ -165,8 +165,13 @@ namespace rbk::udds::broadcast {
                 return std::make_unique<UddsJsonProto>();
             },
             [](UddsJsonProto& message) {
+                message.received_timestamp_ns(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()
+                    ).count()
+                );
                 _received_from[message.robot_id()]
-                    = std::shared_ptr<UddsJsonProto>{&message};
+                    = std::shared_ptr<std::decay_t<decltype(message)>>{&message};
             }
         };
         subscriber = &subscriber_singleton;
@@ -185,7 +190,7 @@ namespace rbk::udds::broadcast {
     auto send(auto&& message) requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
         message.robot_id(profile::self_robot_id);
 
-        message.timestamp(
+        message.send_timestamp_ns(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()
             ).count()
