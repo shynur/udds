@@ -29,23 +29,23 @@ namespace rbk::udds {
      */
     template <
         std::regular proto_t,
-        std::derived_from<eprosima::fastdds::dds::TopicDataType> proto_pub_sub_t,
+        std::derived_from<::eprosima::fastdds::dds::TopicDataType> proto_pub_sub_t,
         std::regular_invocable<> auto proto_name_cstr
     > requires requires {
         { proto_name_cstr() } -> std::same_as<const char *>;
     }
     class Publisher {
-        eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
-        eprosima::fastdds::dds::Publisher *publisher = nullptr;
-        eprosima::fastdds::dds::Topic *topic = nullptr;
-        eprosima::fastdds::dds::DataWriter *writer = nullptr;
-        eprosima::fastdds::dds::TypeSupport type;
-        struct: eprosima::fastdds::dds::DataWriterListener {
+        ::eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
+        ::eprosima::fastdds::dds::Publisher *publisher = nullptr;
+        ::eprosima::fastdds::dds::Topic *topic = nullptr;
+        ::eprosima::fastdds::dds::DataWriter *writer = nullptr;
+        ::eprosima::fastdds::dds::TypeSupport type;
+        struct: ::eprosima::fastdds::dds::DataWriterListener {
             std::atomic_int matched = 0;  // TODO: 可以改成 uint 吗? 进一步地, uchar 应该绰绰有余了.
 
             void on_publication_matched(
-                eprosima::fastdds::dds::DataWriter *,
-                const eprosima::fastdds::dds::PublicationMatchedStatus& info
+                ::eprosima::fastdds::dds::DataWriter *,
+                const ::eprosima::fastdds::dds::PublicationMatchedStatus& info
             ) override {
                 switch (info.current_count_change) {
                     case 1:
@@ -80,11 +80,11 @@ namespace rbk::udds {
         ): type{new proto_pub_sub_t} {
             const bool successfully_inited = (
                 this->participant
-                = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+                = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
                     ->create_participant(
                         domain_id,
                         [&] {
-                            auto participant_qos = eprosima::fastdds::dds::DomainParticipantQos{};
+                            auto participant_qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
                             participant_qos.name(participant_name.c_str());
                             return participant_qos;
                         }()
@@ -96,18 +96,18 @@ namespace rbk::udds {
                 = this->participant->create_topic(
                     topic_name.c_str(),
                     proto_name_cstr(),
-                    eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
+                    ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
                 )
             ) and (
                 this->publisher
                 = this->participant->create_publisher(
-                    eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT
+                    ::eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT
                 )
             ) and (
                 this->writer
                 = this->publisher->create_datawriter(
                     topic,
-                    eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT,
+                    ::eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT,
                     &this->writer_listener
                 )
             );
@@ -128,7 +128,7 @@ namespace rbk::udds {
             if (this->topic)
                 this->participant->delete_topic(this->topic);
 
-            eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+            ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
             ->delete_participant(this->participant);
         }
 
@@ -153,18 +153,18 @@ namespace rbk::udds {
      */
     template <
         std::regular proto_t,
-        std::derived_from<eprosima::fastdds::dds::TopicDataType> proto_pub_sub_t,
+        std::derived_from<::eprosima::fastdds::dds::TopicDataType> proto_pub_sub_t,
         std::regular_invocable<> auto proto_name_cstr
     > requires requires {
         { proto_name_cstr() } -> std::same_as<const char *>;
     }
     class Subscriber {
-        eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
-        eprosima::fastdds::dds::Subscriber *subscriber = nullptr;
-        eprosima::fastdds::dds::DataReader *reader = nullptr;
-        eprosima::fastdds::dds::Topic *topic = nullptr;
-        eprosima::fastdds::dds::TypeSupport type;
-        struct ReaderListener: eprosima::fastdds::dds::DataReaderListener {
+        ::eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
+        ::eprosima::fastdds::dds::Subscriber *subscriber = nullptr;
+        ::eprosima::fastdds::dds::DataReader *reader = nullptr;
+        ::eprosima::fastdds::dds::Topic *topic = nullptr;
+        ::eprosima::fastdds::dds::TypeSupport type;
+        struct ReaderListener: ::eprosima::fastdds::dds::DataReaderListener {
             std::move_only_function<
                 std::unique_ptr<proto_t, std::function<void(proto_t *)>>()
             > message_locator;
@@ -177,8 +177,8 @@ namespace rbk::udds {
                message_processor{std::move(message_processor)} {}
 
             void on_subscription_matched(
-                eprosima::fastdds::dds::DataReader *,
-                const eprosima::fastdds::dds::SubscriptionMatchedStatus& info
+                ::eprosima::fastdds::dds::DataReader *,
+                const ::eprosima::fastdds::dds::SubscriptionMatchedStatus& info
             ) override {
                 switch (info.current_count_change) {
                     case 1:
@@ -196,13 +196,13 @@ namespace rbk::udds {
                         assert(false);
                 }
             }
-            void on_data_available(eprosima::fastdds::dds::DataReader *const reader) override {
-                auto info = eprosima::fastdds::dds::SampleInfo{};
+            void on_data_available(::eprosima::fastdds::dds::DataReader *const reader) override {
+                auto info = ::eprosima::fastdds::dds::SampleInfo{};
                 auto message = this->message_locator();
 
                 if (
                     reader->take_next_sample(std::to_address(message), &info)
-                    == eprosima::fastdds::dds::RETCODE_OK
+                    == ::eprosima::fastdds::dds::RETCODE_OK
                 )
                     if (info.valid_data) {
                         this->message_processor(*message);
@@ -236,19 +236,18 @@ namespace rbk::udds {
         ) requires requires {
             std::unique_ptr{message_locator()};
             requires std::is_same_v<proto_t, typename decltype(message_locator())::element_type>;
-        }
-        : type{new proto_pub_sub_t},
+        }: type{new proto_pub_sub_t},
            reader_listener{
             std::forward<decltype(message_locator)>(message_locator),
             std::forward<decltype(message_processor)>(message_processor)
         } {
             const bool successfully_inited = (
                 this->participant
-                = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+                = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
                     ->create_participant(
                         domain_id,
                         [&] {
-                            auto participant_qos = eprosima::fastdds::dds::DomainParticipantQos{};
+                            auto participant_qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
                             participant_qos.name(participant_name.c_str());
                             return participant_qos;
                         }()
@@ -260,18 +259,18 @@ namespace rbk::udds {
                 = this->participant->create_topic(
                     topic_name.c_str(),
                     proto_name_cstr(),
-                    eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
+                    ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
                 )
             ) and (
                 this->subscriber
                 = this->participant->create_subscriber(
-                    eprosima::fastdds::dds::SUBSCRIBER_QOS_DEFAULT
+                    ::eprosima::fastdds::dds::SUBSCRIBER_QOS_DEFAULT
                 )
             ) and (
                 this->reader
                 = this->subscriber->create_datareader(
                     this->topic,
-                    eprosima::fastdds::dds::DATAREADER_QOS_DEFAULT,
+                    ::eprosima::fastdds::dds::DATAREADER_QOS_DEFAULT,
                     &this->reader_listener
                 )
             );
@@ -292,7 +291,7 @@ namespace rbk::udds {
             if (this->subscriber)
                 this->participant->delete_subscriber(this->subscriber);
 
-            eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+            ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
             ->delete_participant(this->participant);
         }
     };
