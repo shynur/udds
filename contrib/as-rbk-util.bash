@@ -4,6 +4,7 @@
 
 cd `dirname $0`/..
 
+make clean
 CXXFLAGS+=' -std=c++26' make
 
 (
