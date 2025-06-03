@@ -2,6 +2,8 @@
 
 # Usage: $0
 
+set -e
+
 cd `dirname $0`/..
 
 make clean
