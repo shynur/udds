@@ -1,5 +1,5 @@
 #include "broadcast.hpp"
-using namespace rbk = shynur;
+namespace rbk = shynur;
 #include <iostream>
 
 int main(int, const char *argv[]) {
