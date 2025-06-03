@@ -1,4 +1,4 @@
-SHELL = /bin/bash
+SHELL = /bin/bash -O globstar
 
 .PHONY: all
 all: build/Makefile include/udds.hpp include/broadcast.hpp src/send.cpp src/receive.cpp
@@ -19,7 +19,7 @@ clean:
 		rm -f $${f_idl%.idl}{.hpp,CdrAux.{hpp,ipp},{PubSubTypes,TypeObjectSupport}.{cxx,hpp}};  \
 	done
 	rm -rf build
-	shopt -s globstar; rm -f ./**/?*~ ./**/.?*~
+	rm -f ./**/?*~ ./**/.?*~
 
 .PHONY: git
 git:
