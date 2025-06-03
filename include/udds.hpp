@@ -22,7 +22,7 @@
 using namespace std::literals;
 
 namespace
-#ifdef SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
+#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
           rbk
 #else
           shynur
