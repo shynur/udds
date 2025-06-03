@@ -1,5 +1,5 @@
-#define SHYNUR_UDDS_USED_BY_SEER_RBK 30408UL
 #include "broadcast.hpp"
+using namespace rbk = shynur;
 #include <iostream>
 
 int main(int, const char *argv[]) {
