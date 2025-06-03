@@ -9,3 +9,4 @@ rm -rf ./* ./.*
 mv /tmp/shynur-udds-git-dir .git
 
 git reset --hard HEAD
+git pull
