@@ -21,7 +21,13 @@
 #include <fastdds/dds/topic/TypeSupport.hpp>
 using namespace std::literals;
 
-namespace rbk::udds {
+namespace
+#ifdef SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
+          rbk
+#else
+          shynur
+#endif
+                ::udds {
     /**
      * @tparam proto_t 由 IDL 文件所定义的消息类型 转换为 C++ class 后 的 class 类型.
      * @tparam proto_pub_sub_t 加上 'PubSubType' 的后缀而已.

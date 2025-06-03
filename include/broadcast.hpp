@@ -15,10 +15,24 @@
 #include <forward_list>
 #include <concepts>
 #include <memory>
-#include "../protos/UddsJsonProto.hpp"
-#include "../protos/UddsJsonProtoPubSubTypes.hpp"
+#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
+    #include "UddsJsonProto.hpp"
+#else
+    #include "../protos/UddsJsonProto.hpp"
+#endif
+#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
+    #include "UddsJsonProtoPubSubTypes.hpp"
+#else
+    #include "../protos/UddsJsonProtoPubSubTypes.hpp"
+#endif
 
-namespace rbk::udds::broadcast {
+namespace
+#ifdef SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
+          rbk
+#else
+          shynur
+#endif
+                ::udds::broadcast {
 
     constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";

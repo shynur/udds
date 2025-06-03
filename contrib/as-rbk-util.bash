@@ -9,7 +9,7 @@ CXXFLAGS+=' -std=c++26' make
 (
     cd include
     for f in *.hpp; do
-        echo '#define SHYNUR_UDDS_USED_BY "SEER Robokit"' > ../$f
+        echo '#define SHYNUR_UDDS_USED_BY_SEER_RBK 30408UL' > ../$f
         cat $f >> ../$f
     done
 )
