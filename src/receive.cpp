@@ -1,12 +1,11 @@
 #include "broadcast.hpp"
-namespace rbk = shynur;
 #include <iostream>
 #include <thread>
 #include <chrono>
 #include <cstdlib>
 
 int main(int, const char *argv[]) {
-    rbk::udds::broadcast::init(argv[1]);  // 设置 robot_id
+    shynur::udds::broadcast::init(argv[1]);  // 设置 robot_id
 
     while (true) {
         char choice;
@@ -20,17 +19,17 @@ int main(int, const char *argv[]) {
         std::cout << '\n';
         switch (choice) {
             case '1':
-                std::cout << std::size(rbk::udds::broadcast::received_from) << '\n';
+                std::cout << std::size(shynur::udds::broadcast::received_from) << '\n';
                 break;
             case '2':
-                for (const auto& robot_id : rbk::udds::broadcast::received_from.keys())
+                for (const auto& robot_id : shynur::udds::broadcast::received_from.keys())
                     std::cout << *robot_id << '\n';
                 break;
             case '3': {
                     std::string robot_id;
                     std::cout << "请输入小车 ID: ";
                     std::cin >> robot_id;
-                    std::cout << (rbk::udds::broadcast::received_from.contains(robot_id)
+                    std::cout << (shynur::udds::broadcast::received_from.contains(robot_id)
                                   ? "是的, 收到了.\n"
                                   : "没有收到.\n");
                 }
@@ -40,11 +39,11 @@ int main(int, const char *argv[]) {
                     std::cout << "请输入小车 ID: ";
                     std::cin >> robot_id;
                     std::cout << "JSON: "
-                              << rbk::udds::broadcast::received_from[robot_id]->json() << '\n';
+                              << shynur::udds::broadcast::received_from[robot_id]->json() << '\n';
                 }
                 break;
             case '5':
-                for (auto [robot_id, message] : rbk::udds::broadcast::received_from)
+                for (auto [robot_id, message] : shynur::udds::broadcast::received_from)
                     std::cout << "小车 ID: " << *robot_id << '\n'
                               << "发送时间: " << message->send_timestamp_ns() << '\n'
                               << "延迟: " << message->received_timestamp_ns() - message->send_timestamp_ns() << " ns\n"

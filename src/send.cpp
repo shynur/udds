@@ -1,9 +1,8 @@
 #include "broadcast.hpp"
-namespace rbk = shynur;
 #include <iostream>
 
 int main(int, const char *argv[]) {
-    rbk::udds::broadcast::init(argv[1]);  // 设置 robot_id
+    shynur::udds::broadcast::init(argv[1]);  // 设置 robot_id
 
     auto msg = UddsJsonProto{};
 
@@ -11,5 +10,5 @@ int main(int, const char *argv[]) {
         if (msg.json() == "q")
             break;
         else
-            rbk::udds::broadcast::send(msg);
+            shynur::udds::broadcast::send(msg);
 }

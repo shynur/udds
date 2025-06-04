@@ -27,13 +27,7 @@
     #include "../protos/UddsJsonProtoPubSubTypes.hpp"
 #endif
 
-namespace
-#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
-          rbk
-#else
-          shynur
-#endif
-                ::udds::broadcast {
+namespace shynur::udds::broadcast {
 
     constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";
@@ -176,7 +170,7 @@ namespace
                 msg.udds_comment("校对时间");
                 for (const auto i : std::views::iota(0, 4)) {
                     std::decay_t<decltype(*this)>::send_no_clock_sync(msg);
-                    std::this_thread::sleep_for(100ms);
+                    std::this_thread::sleep_for(1s);
                 }
             }
 
@@ -222,8 +216,6 @@ namespace
                         std::chrono::steady_clock::now().time_since_epoch()
                     ).count()
                 );
-
-
 
                 _received_from[message.robot_id()]
                     = std::shared_ptr<std::decay_t<decltype(message)>>{&message};
