@@ -165,14 +165,14 @@ namespace shynur::udds::broadcast {
         std::atomic_flag 开始校对时间了吗 = false, 校对过了 = false;
         auto operator()(auto&& message) {
 
-            if (!this->开始校对时间了吗.test_and_set()) [[unlikely]] {
-                std::decay_t<decltype(message)> msg;
-                msg.udds_comment("校对时间");
-                for (const auto i : std::views::iota(0, 4)) {
-                    std::decay_t<decltype(*this)>::send_no_clock_sync(msg);
-                    std::this_thread::sleep_for(1s);
-                }
-            }
+            //if (!this->开始校对时间了吗.test_and_set()) [[unlikely]] {
+            //    std::decay_t<decltype(message)> msg;
+            //    msg.udds_comment("校对时间");
+            //    for (const auto i : std::views::iota(0, 4)) {
+            //        std::decay_t<decltype(*this)>::send_no_clock_sync(msg);
+            //        std::this_thread::sleep_for(1s);
+            //    }
+            //}
 
             std::decay_t<decltype(*this)>::send_no_clock_sync(message);
         }
