@@ -144,7 +144,7 @@ namespace
          * @return 如果真的发布了消息, 则返回 true; 否则返回 false.
          */
         auto publish(const proto_t& message) {
-            if (this->writer_listener.matched >= 1) {
+            if (this->writer_listener.matched >= 1) [[likely]] {
                 this->writer->write(&message);
                 return true;
             } else
@@ -209,8 +209,8 @@ namespace
                 if (
                     reader->take_next_sample(std::to_address(message), &info)
                     == ::eprosima::fastdds::dds::RETCODE_OK
-                )
-                    if (info.valid_data) {
+                ) [[likely]]
+                    if (info.valid_data) [[likely]] {
                         this->message_processor(*message);
                         message.release();
                         return;

@@ -2,6 +2,7 @@
 #pragma once
 #include "udds.hpp"
 #include <string>
+#include <thread>
 #include <format>
 #include <cstdint>
 #include <type_traits>
@@ -36,6 +37,10 @@ namespace
 
     constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";
+
+    namespace profile {
+        inline std::string self_robot_id;
+    }
 
     Publisher<
         UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
@@ -136,15 +141,48 @@ namespace
             };
             return Messages_From_Robots{};
         }();
+
     /**
      * @brief 目前已接收的所有订阅者的消息.
      *        对于同一订阅者, 只保留最近一次来自它的消息.
      */
     inline const auto& received_from = _received_from;
 
-    namespace profile {
-        inline std::string self_robot_id;
-    }
+    /**
+     * @brief 向局域网中目前已经被发现的订阅者广播消息.
+     * @param message 要广播的消息.
+     *                message 的 send_timestamp_ns / received_timestamp_ns / robot_id 字段会被自动设置;
+     *                你可设置: x / y / theta / json.
+     */
+    inline constinit struct {
+        static auto send_no_clock_sync(auto&& message)
+        requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
+            message.robot_id(profile::self_robot_id);
+
+            message.send_timestamp_ns(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()
+                ).count()
+            );
+
+            publisher->publish(message);
+        }
+
+        std::atomic_flag 开始校对时间了吗 = false, 校对过了 = false;
+        auto operator()(auto&& message) {
+
+            if (!this->开始校对时间了吗.test_and_set()) [[unlikely]] {
+                std::decay_t<decltype(message)> msg;
+                msg.udds_comment("校对时间");
+                for (const auto i : std::views::iota(0, 4)) {
+                    std::decay_t<decltype(*this)>::send_no_clock_sync(msg);
+                    std::this_thread::sleep_for(100ms);
+                }
+            }
+
+            std::decay_t<decltype(*this)>::send_no_clock_sync(message);
+        }
+    } send;
 
     /**
      * @brief 初始化广播系统.  要使用 `udds::broadcast`, 必须首先调用此函数.
@@ -184,6 +222,9 @@ namespace
                         std::chrono::steady_clock::now().time_since_epoch()
                     ).count()
                 );
+
+
+
                 _received_from[message.robot_id()]
                     = std::shared_ptr<std::decay_t<decltype(message)>>{&message};
             }
@@ -194,22 +235,5 @@ namespace
                 ~subscriber_resetter() { subscriber = nullptr; }
             } _;
         }
-    }
-
-    /**
-     * @brief 向局域网中目前已经被发现的订阅者广播消息.
-     * @param message 要广播的消息.
-     *                message 的 send_timestamp_ns / received_timestamp_ns / robot_id 字段会被自动设置.
-     */
-    auto send(auto&& message) requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
-        message.robot_id(profile::self_robot_id);
-
-        message.send_timestamp_ns(
-            std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::steady_clock::now().time_since_epoch()
-            ).count()
-        );
-
-        publisher->publish(message);
     }
 }
