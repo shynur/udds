@@ -275,7 +275,7 @@ namespace shynur::udds::broadcast {
             >{};
             static auto repliers_mutex = std::shared_mutex{};
 
-            if (const auto _ = std::shared_lock{repliers_mutex}; !replier_for.contains(sender)) {
+            if (std::shared_lock{repliers_mutex}, !replier_for.contains(sender)) {
                 if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender))
                     replier_for[sender].reset(
                         new decltype(replier_for)::mapped_type::element_type{
