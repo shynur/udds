@@ -20,6 +20,7 @@
 #include <forward_list>
 #include <shared_mutex>
 #include <unordered_map>
+#include <unordered_set>
 #if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
     #include "UddsJsonProto.hpp"
     #include "UddsJsonProtoPubSubTypes.hpp"
@@ -175,14 +176,23 @@ namespace shynur::udds::broadcast {
 
         /**
          * @brief 获取 ROBOT_ID 车辆的时钟 减去 自身时钟 的 值.
-         * @warning: 如果校对失败则返回 0.
+         * @note 只能查询 **向本机发送过消息的小车** 的时钟.
+         * @warning 如果校对失败则返回 0.
          */
         auto ns [[gnu::reproducible]] (const std::string& robot_id) const {
-            for (auto k = 1.0; std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id); )
-                if (k > 90)
-                    return 0.0;
-                else
-                    std::this_thread::sleep_for(40ms * this->NUM_PACKS * this->NUM_PACKS * (k *= 1.25));
+            if (
+                static auto robots_passed_before = std::unordered_set<std::string>{};
+                !robots_passed_before.contains(robot_id)
+            ) {
+                robots_passed_before.insert(robot_id);
+                std::this_thread::sleep_for(
+                    2 * DISCOVERY_DELAY
+                    + 40ms * (this->NUM_PACKS * this->NUM_PACKS /* 只是为了保证等待足够久 */)
+                );
+            }
+
+            if (std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id))
+                return 0.0;
 
             std::shared_lock{this->packs_mutex};
             return std::transform_reduce(
@@ -380,5 +390,7 @@ namespace shynur::udds::broadcast {
                 ~subscriber_resetter() { subscriber = nullptr; }
             } _;
         }
+
+        std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
     }
 }
