@@ -187,11 +187,15 @@ namespace shynur::udds::broadcast {
             std::shared_lock{this->packs_mutex};
             return std::transform_reduce(
                 std::execution::par_unseq,
-                std::cbegin(this->packs.find(robot_id)->second) + 1,
+                std::cbegin(this->packs.find(robot_id)->second),
                 std::cend(this->packs.find(robot_id)->second),
                 0.0,
                 std::plus{},
                 [](const UddsClkSyncPackProto& pack) {
+                    std::cerr << std::format(
+                        "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
+                        pack.latency(), pack.received_timestamp() - pack.send_timestamp()
+                    );
                     return (
                         pack.latency() - (pack.received_timestamp() - pack.send_timestamp())
                     ) / 2;
@@ -303,6 +307,7 @@ namespace shynur::udds::broadcast {
             pack.sender(profile::self_robot_id);
 
             for (const auto i : std::views::iota(0u, this->NUM_PACKS)) {
+                std::this_thread::sleep_for(40ms * this->NUM_PACKS);
                 std::cerr << std::format(
                     "Sending clock sync pack {}/{} to {}...\n",
                     i + 1, this->NUM_PACKS, json_sender
@@ -312,7 +317,6 @@ namespace shynur::udds::broadcast {
                         std::chrono::steady_clock::now().time_since_epoch()
                     ).count() / 1e9
                 );
-                std::this_thread::sleep_for(40ms * this->NUM_PACKS);
                 sender.publish(pack);
             }
         }
