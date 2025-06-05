@@ -169,7 +169,7 @@ namespace shynur::udds::broadcast {
 
     inline struct {
         const std::uint8_t DOMAIN_ID = 2;
-        const unsigned NUM_PACKS = 4;
+        const unsigned NUM_PACKS = 10;
 
         std::unordered_map<std::string, std::vector<UddsClkSyncPackProto>> packs;
         mutable std::shared_mutex packs_mutex;
