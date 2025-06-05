@@ -187,7 +187,12 @@ namespace shynur::udds::broadcast {
                 robots_passed_before.insert(robot_id);
                 std::this_thread::sleep_for(
                     2 * DISCOVERY_DELAY
-                    + 40ms * (this->NUM_PACKS * this->NUM_PACKS /* 只是为了保证等待足够久 */)
+                    + 40ms * this->NUM_PACKS * (
+                        this->NUM_PACKS - (
+                            std::shared_lock{this->packs_mutex},
+                            this->packs.contains(robot_id) ? std::size(this->packs.find(robot_id)->second) : 0
+                        )
+                    )
                 );
             }
 
@@ -270,19 +275,20 @@ namespace shynur::udds::broadcast {
             >{};
             static auto repliers_mutex = std::shared_mutex{};
 
-            if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender)) {
-                replier_for[sender].reset(
-                    new decltype(replier_for)::mapped_type::element_type{
-                        this->DOMAIN_ID,
-                        std::format(
-                            "{} (as clock sync replier to {})",
-                            profile::self_robot_id, sender
-                        ),
-                        sender
-                    }
-                );
-                std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
-            }
+            if (const auto _ = std::shared_lock{repliers_mutex}; !replier_for.contains(sender))
+                if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender)) {
+                    replier_for[sender].reset(
+                        new decltype(replier_for)::mapped_type::element_type{
+                            this->DOMAIN_ID,
+                            std::format(
+                                "{} (as clock sync replier to {})",
+                                profile::self_robot_id, sender
+                            ),
+                            sender
+                        }
+                    );
+                    std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
+                }
 
             {
                 const auto _ = std::shared_lock{repliers_mutex};
