@@ -1,25 +1,25 @@
 /* source code: <https://github.com/shynur/udds> */
 #pragma once
 #include "udds.hpp"
+#include <chrono>
+#include <format>
+#include <memory>
+#include <ranges>
 #include <string>
 #include <thread>
-#include <format>
-#include <cstdint>
-#include <type_traits>
-#include <chrono>
-#include <ranges>
-#include <iterator>
-#include <utility>
 #include <cassert>
-#include <execution>
+#include <cstdint>
 #include <numeric>
-#include <functional>
+#include <utility>
+#include <concepts>
 #include <iostream>
+#include <iterator>
+#include <execution>
+#include <functional>
+#include <type_traits>
+#include <forward_list>
 #include <shared_mutex>
 #include <unordered_map>
-#include <forward_list>
-#include <concepts>
-#include <memory>
 #if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
     #include "UddsJsonProto.hpp"
     #include "UddsJsonProtoPubSubTypes.hpp"
@@ -168,7 +168,7 @@ namespace shynur::udds::broadcast {
 
     inline struct {
         const std::uint8_t DOMAIN_ID = 2;
-        const unsigned NUM_PACKS = 4;
+        const unsigned NUM_PACKS = 10;
 
         std::unordered_map<std::string, std::vector<UddsClkSyncPackProto>> packs;
         mutable std::shared_mutex packs_mutex;
@@ -187,7 +187,7 @@ namespace shynur::udds::broadcast {
             std::shared_lock{this->packs_mutex};
             return std::transform_reduce(
                 std::execution::par_unseq,
-                std::cbegin(this->packs.find(robot_id)->second),
+                std::cbegin(this->packs.find(robot_id)->second) + 1,
                 std::cend(this->packs.find(robot_id)->second),
                 0.0,
                 std::plus{},
