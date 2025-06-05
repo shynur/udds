@@ -169,7 +169,7 @@ namespace shynur::udds::broadcast {
 
     inline struct {
         const std::uint8_t DOMAIN_ID = 2;
-        const unsigned NUM_PACKS = 10;
+        const unsigned NUM_PACKS = 4;
 
         std::unordered_map<std::string, std::vector<UddsClkSyncPackProto>> packs;
         mutable std::shared_mutex packs_mutex;
@@ -275,8 +275,8 @@ namespace shynur::udds::broadcast {
             >{};
             static auto repliers_mutex = std::shared_mutex{};
 
-            if (const auto _ = std::shared_lock{repliers_mutex}; !replier_for.contains(sender))
-                if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender)) {
+            if (const auto _ = std::shared_lock{repliers_mutex}; !replier_for.contains(sender)) {
+                if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender))
                     replier_for[sender].reset(
                         new decltype(replier_for)::mapped_type::element_type{
                             this->DOMAIN_ID,
@@ -287,8 +287,9 @@ namespace shynur::udds::broadcast {
                             sender
                         }
                     );
-                    std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
-                }
+
+                std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
+            }
 
             {
                 const auto _ = std::shared_lock{repliers_mutex};
