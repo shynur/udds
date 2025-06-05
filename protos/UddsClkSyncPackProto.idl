@@ -1,0 +1,6 @@
+struct UddsClkSyncPackProto {
+    string sender;
+    double send_timestamp;
+    double received_timestamp;
+    double latency;  // == 0: JSON-receiver send to JSON-sender.
+};

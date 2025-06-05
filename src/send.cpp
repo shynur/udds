@@ -1,8 +1,9 @@
 #include "broadcast.hpp"
 #include <iostream>
+using namespace shynur;
 
 int main(int, const char *argv[]) {
-    shynur::udds::broadcast::init(argv[1]);  // 设置 robot_id
+    udds::broadcast::init(argv[1]);  // 设置 robot_id
 
     auto msg = UddsJsonProto{};
 
@@ -10,5 +11,5 @@ int main(int, const char *argv[]) {
         if (msg.json() == "q")
             break;
         else
-            shynur::udds::broadcast::send(msg);
+            udds::broadcast::send(msg);
 }

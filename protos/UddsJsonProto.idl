@@ -1,7 +1,4 @@
 struct UddsJsonProto {
-    // 仅供 udds 内部使用的字段:
-    string udds_comment;
-
     // 发布时间 (相对于发布者的 clock):
     unsigned long long send_timestamp_ns;
     // 接收时间 (相对于接收者的 clock):

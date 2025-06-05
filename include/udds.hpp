@@ -28,7 +28,7 @@ using namespace std::literals;
 namespace shynur::udds {
     /**
      * @tparam proto_t 由 IDL 文件所定义的消息类型 转换为 C++ class 后 的 class 类型.
-     * @tparam proto_pub_sub_t 加上 'PubSubType' 的后缀而已.
+     * @tparam proto_pub_sub_t 给 proto_t 加上 'PubSubType' 的后缀而已.
      * @tparam proto_name_cstr 返回 proto_t 的类型名, 以字符串的形式.
      */
     template <
@@ -121,6 +121,12 @@ namespace shynur::udds {
                         "Failed to initialize Publisher"
                     )  // TODO: 更详细的错误信息
                 );
+            else
+                std::cerr << std::format(
+                    R"({{"role":"Publisher","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
+                    "\n",
+                    domain_id, participant_name, topic_name
+                );
         }
         ~Publisher() {
             if (this->writer)
@@ -152,7 +158,7 @@ namespace shynur::udds {
 
     /**
      * @tparam proto_t 由 IDL 文件所定义的消息类型 转换为 C++ class 后 的 class 类型.
-     * @tparam proto_pub_sub_t 加上 'PubSubType' 的后缀而已.
+     * @tparam proto_pub_sub_t 给 proto_t 加上 'PubSubType' 的后缀而已.
      * @tparam proto_name_cstr proto_t 的类型名, 以字符串的形式.
      */
     template <
@@ -283,6 +289,12 @@ namespace shynur::udds {
                     std::format(
                         "Failed to initialize Publisher"
                     )  // TODO: 更详细的错误信息
+                );
+            else
+                std::cerr << std::format(
+                    R"({{"role":"Subscriber","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
+                    "\n",
+                    domain_id, participant_name, topic_name
                 );
         }
         ~Subscriber() {

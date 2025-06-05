@@ -11,6 +11,10 @@
 #include <iterator>
 #include <utility>
 #include <cassert>
+#include <execution>
+#include <numeric>
+#include <functional>
+#include <iostream>
 #include <shared_mutex>
 #include <unordered_map>
 #include <forward_list>
@@ -18,29 +22,31 @@
 #include <memory>
 #if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
     #include "UddsJsonProto.hpp"
+    #include "UddsJsonProtoPubSubTypes.hpp"
+    #include "UddsClkSyncPackProto.hpp"
+    #include "UddsClkSyncPackProtoPubSubTypes.hpp"
 #else
     #include "../protos/UddsJsonProto.hpp"
-#endif
-#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
-    #include "UddsJsonProtoPubSubTypes.hpp"
-#else
     #include "../protos/UddsJsonProtoPubSubTypes.hpp"
+    #include "../protos/UddsClkSyncPackProto.hpp"
+    #include "../protos/UddsClkSyncPackProtoPubSubTypes.hpp"
 #endif
 
 namespace shynur::udds::broadcast {
 
     constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";
+    constexpr auto DISCOVERY_DELAY = 400ms;
 
     namespace profile {
         inline std::string self_robot_id;
     }
 
-    Publisher<
+    inline Publisher<
         UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
     > *publisher [[indeterminate]];
 
-    Subscriber<
+    inline Subscriber<
         UddsJsonProto, UddsJsonProtoPubSubType, [] {return "UddsJsonProto";}
     > *subscriber [[indeterminate]];
 
@@ -48,13 +54,13 @@ namespace shynur::udds::broadcast {
         = [] {
             class Messages_From_Robots {
                 std::unordered_map<std::string, std::shared_ptr<const UddsJsonProto>> messages;
-                mutable std::shared_mutex mutex;
+                mutable std::shared_mutex messages_mutex;
               public:
                 /**
                  * @brief 是否包含特定小车的消息.
                  */
                 auto contains(const std::string& robot_id) const {
-                    auto _ = std::shared_lock{this->mutex};
+                    auto _ = std::shared_lock{this->messages_mutex};
                     return this->messages.contains(robot_id);
                 }
                 /**
@@ -65,18 +71,18 @@ namespace shynur::udds::broadcast {
                  *       以避免数据竞争.
                  */
                 auto operator[](const std::string& robot_id) const {
-                    auto _ = std::shared_lock{this->mutex};
+                    auto _ = std::shared_lock{this->messages_mutex};
                     return this->messages.at(robot_id);
                 }
                 auto& operator[](const std::string& robot_id) {
-                    auto _ = std::unique_lock{this->mutex};
+                    auto _ = std::unique_lock{this->messages_mutex};
                     return this->messages[robot_id];
                 }
                 /**
                  * @brief 收到了几台小车的消息, or 目前持有几条消息.
                  */
                 auto size() const {
-                    auto _ = std::shared_lock{this->mutex};
+                    auto _ = std::shared_lock{this->messages_mutex};
                     return std::size(this->messages);
                 }
                 /**
@@ -84,7 +90,7 @@ namespace shynur::udds::broadcast {
                  *        (其实是指向 robot_id 的指针).
                  */
                 auto keys() const {
-                    auto _ = std::shared_lock{this->mutex};
+                    auto _ = std::shared_lock{this->messages_mutex};
                     return std::forward_list<const std::string *>{
                         std::from_range,
                         this->messages | std::views::keys | std::views::transform(
@@ -148,35 +154,169 @@ namespace shynur::udds::broadcast {
      *                message 的 send_timestamp_ns / received_timestamp_ns / robot_id 字段会被自动设置;
      *                你可设置: x / y / theta / json.
      */
-    inline constinit struct {
-        static auto send_no_clock_sync(auto&& message)
-        requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
-            message.robot_id(profile::self_robot_id);
+    auto send(auto&& message) requires std::same_as<UddsJsonProto, std::decay_t<decltype(message)>> {
+        message.robot_id(profile::self_robot_id);
 
-            message.send_timestamp_ns(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(
-                    std::chrono::steady_clock::now().time_since_epoch()
-                ).count()
-            );
+        message.send_timestamp_ns(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()
+            ).count()
+        );
 
-            publisher->publish(message);
+        publisher->publish(message);
+    }
+
+    inline struct {
+        const std::uint8_t DOMAIN_ID = 2;
+        const unsigned NUM_PACKS = 4;
+
+        std::unordered_map<std::string, std::vector<UddsClkSyncPackProto>> packs;
+        mutable std::shared_mutex packs_mutex;
+
+        /**
+         * @brief 获取 ROBOT_ID 车辆的时钟 减去 自身时钟 的 值.
+         * @warning: 如果校对失败则返回 0.
+         */
+        auto ns [[gnu::reproducible]] (const std::string& robot_id) const {
+            for (auto k = 1.0; std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id); )
+                if (k > 90)
+                    return 0.0;
+                else
+                    std::this_thread::sleep_for(40ms * this->NUM_PACKS * this->NUM_PACKS * (k *= 1.25));
+
+            std::shared_lock{this->packs_mutex};
+            return std::transform_reduce(
+                std::execution::par_unseq,
+                std::cbegin(this->packs.find(robot_id)->second),
+                std::cend(this->packs.find(robot_id)->second),
+                0.0,
+                std::plus{},
+                [](const UddsClkSyncPackProto& pack) {
+                    return (
+                        pack.latency() - (pack.received_timestamp() - pack.send_timestamp())
+                    ) / 2;
+                }
+            ) / std::size(this->packs.find(robot_id)->second) * 1e9;
         }
 
-        std::atomic_flag 开始校对时间了吗 = false, 校对过了 = false;
-        auto operator()(auto&& message) {
+        auto init() {
+            static auto receiver = Subscriber<
+                UddsClkSyncPackProto, UddsClkSyncPackProtoPubSubType,
+                [] {return "UddsClkSyncPackProto";}
+            >{
+                this->DOMAIN_ID,
+                std::format(
+                    "{} (as clock sync receiver)",
+                    profile::self_robot_id
+                ),
+                profile::self_robot_id,
+                [] noexcept {
+                    return std::make_unique<UddsClkSyncPackProto>();
+                },
+                [this](UddsClkSyncPackProto& pack) {
+                    pack.received_timestamp(
+                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                            std::chrono::steady_clock::now().time_since_epoch()
+                        ).count() / 1e9
+                    );
 
-            //if (!this->开始校对时间了吗.test_and_set()) [[unlikely]] {
-            //    std::decay_t<decltype(message)> msg;
-            //    msg.udds_comment("校对时间");
-            //    for (const auto i : std::views::iota(0, 4)) {
-            //        std::decay_t<decltype(*this)>::send_no_clock_sync(msg);
-            //        std::this_thread::sleep_for(1s);
-            //    }
-            //}
+                    std::cerr << "Received clock sync pack.\n";
+                    if (pack.latency()) {
+                        std::cerr << std::format(
+                            "Clock sync pack returned from {}\n",
+                            pack.sender()
+                        );
+                        const auto _ = std::unique_lock{this->packs_mutex};
+                        this->packs[pack.sender()].push_back(std::move(pack));
+                    } else
+                        std::thread{
+                            [this, pack = std::move(pack)] mutable {
+                                const auto sender = pack.sender();
+                                this->reply(sender, std::move(pack));
+                            }
+                        }.detach();
 
-            std::decay_t<decltype(*this)>::send_no_clock_sync(message);
+                    delete &pack;
+                }
+            };
         }
-    } send;
+
+        void reply(const std::string sender, UddsClkSyncPackProto pack) const {
+            pack.sender(profile::self_robot_id);
+            pack.latency(pack.received_timestamp() - pack.send_timestamp());
+
+            static auto replier_for = std::unordered_map<
+                std::string,
+                std::unique_ptr<
+                    Publisher<
+                        UddsClkSyncPackProto, UddsClkSyncPackProtoPubSubType,
+                        [] {return "UddsClkSyncPackProto";}
+                    >
+                >
+            >{};
+            static auto repliers_mutex = std::shared_mutex{};
+
+            if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender)) {
+                replier_for[sender].reset(
+                    new decltype(replier_for)::mapped_type::element_type{
+                        this->DOMAIN_ID,
+                        std::format(
+                            "{} (as clock sync replier to {})",
+                            profile::self_robot_id, sender
+                        ),
+                        sender
+                    }
+                );
+                std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
+            }
+
+            {
+                const auto _ = std::shared_lock{repliers_mutex};
+                std::cerr << std::format(
+                    "Replying clock sync pack to {}...\n",
+                    sender
+                );
+                pack.send_timestamp(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()
+                    ).count() / 1e9
+                );
+                replier_for[sender]->publish(std::move(pack));
+            }
+        }
+
+        auto send_test_packs(const std::string& json_sender) const {
+            auto sender = Publisher<
+                UddsClkSyncPackProto, UddsClkSyncPackProtoPubSubType,
+                [] {return "UddsClkSyncPackProto";}
+            >{
+                this->DOMAIN_ID,
+                std::format(
+                    "{} (as clock sync sender)",
+                    profile::self_robot_id
+                ),
+                json_sender
+            };
+            std::this_thread::sleep_for(DISCOVERY_DELAY);  // 等待被发现.
+
+            auto pack = UddsClkSyncPackProto{};
+            pack.sender(profile::self_robot_id);
+
+            for (const auto i : std::views::iota(0u, this->NUM_PACKS)) {
+                std::cerr << std::format(
+                    "Sending clock sync pack {}/{} to {}...\n",
+                    i + 1, this->NUM_PACKS, json_sender
+                );
+                pack.send_timestamp(
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::steady_clock::now().time_since_epoch()
+                    ).count() / 1e9
+                );
+                std::this_thread::sleep_for(40ms * this->NUM_PACKS);
+                sender.publish(pack);
+            }
+        }
+    } clock_offset_of;
 
     /**
      * @brief 初始化广播系统.  要使用 `udds::broadcast`, 必须首先调用此函数.
@@ -185,11 +325,13 @@ namespace shynur::udds::broadcast {
     inline auto init(const std::string& self_robot_id) {
         profile::self_robot_id = self_robot_id;
 
+        clock_offset_of.init();
+
         static auto publisher_singleton = std::decay_t<decltype(*publisher)>{
             DOMAIN_ID,
             std::format(
                 "{} (as publisher)",
-                self_robot_id
+                profile::self_robot_id
             ),
             TOPIC_NAME
         };
@@ -204,7 +346,7 @@ namespace shynur::udds::broadcast {
             DOMAIN_ID,
             std::format(
                 "{} (as subscriber)",
-                self_robot_id
+                profile::self_robot_id
             ),
             TOPIC_NAME,
             [] noexcept {
@@ -216,6 +358,13 @@ namespace shynur::udds::broadcast {
                         std::chrono::steady_clock::now().time_since_epoch()
                     ).count()
                 );
+
+                if (!received_from.contains(message.robot_id()))
+                    std::thread{
+                        [sender=message.robot_id()] {
+                            clock_offset_of.send_test_packs(std::move(sender));
+                        }
+                    }.detach();
 
                 _received_from[message.robot_id()]
                     = std::shared_ptr<std::decay_t<decltype(message)>>{&message};
