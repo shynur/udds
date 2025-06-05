@@ -13,6 +13,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 add_executable(send src/send.cpp ${UddsExample_SOURCES_CXX})
-target_link_libraries(send fastdds fastcdr)
+target_link_libraries(send fastdds fastcdr tbb)
 add_executable(receive src/receive.cpp ${UddsExample_SOURCES_CXX})
-target_link_libraries(receive fastdds fastcdr)
+target_link_libraries(receive fastdds fastcdr tbb)
