@@ -110,7 +110,7 @@ int main(const int argc, const char *const argv[]) {
             }
         } else if (fn == "send") {
             auto message = UddsJsonProto{};
-            for (auto _ : std::views::iota(0, /* number of fields: */ 7)) {
+            for (auto _ : std::views::iota(0, /* number of fields: */ 4)) {
                 std::string field_name;
                 std::cin >> field_name;
                 if (field_name == "x")
