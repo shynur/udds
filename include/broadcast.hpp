@@ -177,9 +177,10 @@ namespace shynur::udds::broadcast {
         /**
          * @brief 获取 ROBOT_ID 车辆的时钟 减去 自身时钟 的 值.
          * @note 只能查询 **向本机发送过消息的小车** 的时钟.
+         *       该值可能是变化的, 如果在校对时间的过程中调用该函数.
          * @warning 如果校对失败则返回 0.
          */
-        auto ns [[gnu::reproducible]] (const std::string& robot_id) const {
+        auto ns(const std::string& robot_id) const {
             if (
                 static auto robots_passed_before = std::unordered_set<std::string>{};
                 !robots_passed_before.contains(robot_id)
