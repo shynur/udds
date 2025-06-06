@@ -113,13 +113,7 @@ int main(const int argc, const char *const argv[]) {
             for (auto _ : std::views::iota(0, /* number of fields: */ 7)) {
                 std::string field_name;
                 std::cin >> field_name;
-                if (field_name == "send_timestamp_ns")
-                    std::cin >> message.send_timestamp_ns();
-                else if (field_name == "received_timestamp_ns")
-                    std::cin >> message.received_timestamp_ns();
-                else if (field_name == "robot_id")
-                    std::cin >> message.robot_id();
-                else if (field_name == "x")
+                if (field_name == "x")
                     std::cin >> message.x();
                 else if (field_name == "y")
                     std::cin >> message.y();
@@ -138,6 +132,8 @@ int main(const int argc, const char *const argv[]) {
                     throw std::runtime_error{
                         std::format("未知字段: {}", field_name)
                     };
+
+                shynur::udds::broadcast::send(message);
             }
         } else if (fn == "clock_offset_of.ns") {
             std::string robot_id;
