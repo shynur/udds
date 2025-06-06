@@ -132,9 +132,9 @@ int main(const int argc, const char *const argv[]) {
                     throw std::runtime_error{
                         std::format("未知字段: {}", field_name)
                     };
-
-                shynur::udds::broadcast::send(message);
             }
+
+            shynur::udds::broadcast::send(message);
         } else if (fn == "clock_offset_of.ns") {
             std::string robot_id;
             std::cin >> robot_id;  // 假设 robot_id 中没有空白字符.
