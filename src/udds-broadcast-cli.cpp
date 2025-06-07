@@ -39,11 +39,13 @@ auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) 
             "program: {}\n"
             "robot_id: {}\n"
             "fastdds_domain: {}\n"
-            "development_mode: {}\n",
+            "development_mode: {}\n"
+            "end_of_json: {}\n",
             options.program,
             options.robot_id,
             options.fastdds_domain,
-            options.development_mode
+            options.development_mode,
+            options.end_of_json
         );
 
 
