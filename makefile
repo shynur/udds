@@ -6,6 +6,7 @@ all:  build/Makefile  \
 	  src/send.cpp src/receive.cpp  \
 	  src/udds-broadcast-cli.cpp
 	cd build; make -j
+	rm -f /bin/udds-broadcast-cli; ln -s {build,/bin}/udds-broadcast-cli
 
 build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)
 	make clean
