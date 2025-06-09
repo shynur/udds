@@ -33,21 +33,10 @@ auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) 
             options.development_mode = true;
         else if (const auto param = "--end_of_json="sv; arg.starts_with(param))
             options.end_of_json = arg.substr(param.length());
-
-    if (options.development_mode)
-        std::cerr << std::format(
-            "program: {}\n"
-            "robot_id: {}\n"
-            "fastdds_domain: {}\n"
-            "development_mode: {}\n"
-            "end_of_json: {}\n",
-            options.program,
-            options.robot_id,
-            options.fastdds_domain,
-            options.development_mode,
-            options.end_of_json
-        );
-
+        else
+            throw std::runtime_error{
+                std::format("未知参数: {}", arg)
+            };
 
     return options;
 }
@@ -59,6 +48,20 @@ int main(const int argc, const char *const argv[]) {
             [](const auto arg) -> std::string_view {return arg;}
         )
         | std::ranges::to<std::vector>();
+
+    if (parse_args(args).development_mode)
+        std::cerr << std::format(
+            "program: {}\n"
+            "robot_id: {}\n"
+            "fastdds_domain: {}\n"
+            "development_mode: {}\n"
+            "end_of_json: {}\n",
+            parse_args(args).program,
+            parse_args(args).robot_id,
+            parse_args(args).fastdds_domain,
+            parse_args(args).development_mode,
+            parse_args(args).end_of_json
+        );
 
     std::signal(SIGINT, [](int) {std::exit(0);});
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});

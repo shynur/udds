@@ -2,14 +2,38 @@
 #include <unistd.h>  // dup2, close, fork, pipe
 #include <iostream>
 #include <stdexcept>
+#include <array>
 #include <vector>
 #include <cstdint>
+#include <cstdlib>
+#include <cassert>
+#include <algorithm>
+#include <cstdio>
 #include <string>
+using namespace std::literals;
 
 namespace shynur::udds {
     struct [[gnu::weak]] Broadcast_Client {
-        static constexpr char *const cli_program = "udds-broadcast-cli";
+        /**
+         * @brief Server 程序.
+         * @note 需要能在 PATH 中查找到.
+         */
+        static constexpr char cli_program[] = "udds-broadcast-cli";
 
+        const std::array<int, 2> to_cli, from_cli;  // 临时存储用于与 CLI 进行 I/O 的描述符.
+        const struct Broadcast_Server_IO {
+            int i, o;
+            Broadcast_Server_IO(const int in, const int out): i{in}, o{out} {}
+            ~Broadcast_Server_IO() {
+                ::close(this->i);
+                ::close(this->o);
+            }
+        } cli_io;
+
+        /**
+         * @brief 创建一个 client, 并连接到一个新建的 server 上.
+         * @param fastdds_domain 暂时不生效, 随便指定一个值即可.
+         */
         Broadcast_Client(
             const std::string robot_id,
             const std::uint8_t fastdds_domain
@@ -19,27 +43,60 @@ namespace shynur::udds {
                 "--fastdds_domain=" + std::to_string(fastdds_domain),
             }
         } {}
-        Broadcast_Client(const std::vector<std::string> options) {
-            int to_cli[[indeterminate]][2], from_cli[[indeterminate]][2];
+        Broadcast_Client(const std::vector<std::string>& options)
+        : to_cli{
+            [] -> std::decay_t<decltype(this->to_cli)> {
+                int fd[2];
+                ::pipe(fd);
+                return {fd[0], fd[1]};
+            }()
+        }, from_cli{
+            [] -> std::decay_t<decltype(this->from_cli)> {
+                int fd[2];
+                ::pipe(fd);
+                return {fd[0], fd[1]};
+            }()
+        }, cli_io{this->to_cli[1], this->from_cli[0]} {
+            /* pre contrast */
+            for (const auto& option : options)
+                assert(
+                    "CLI 程序不支持含空白字符的参数"
+                    && std::none_of(
+                        option.cbegin(), option.cend(),
+                        [](const auto& c) {return std::isspace(c);}
+                    )
+                );
 
-            ::pipe(to_cli), ::pipe(from_cli);
+            const auto cli_pid = ::fork();
+            if (cli_pid == 0) {
+                ::close(this->to_cli[1]), ::close(this->from_cli[0]);
+                ::dup2(  this->to_cli[0], 0), ::close(  this->to_cli[0]);
+                ::dup2(this->from_cli[1], 1), ::close(this->from_cli[1]);
 
-            switch (::fork()) {
-                case 0:
-                    ::close(to_cli[1]), ::close(from_cli[0]);
-                    ::dup2(  to_cli[0], 0), ::close(  to_cli[0]);
-                    ::dup2(from_cli[1], 1), ::close(from_cli[1]);
+                ::execvp(
+                    cli_program,
+                    [options=options] mutable {
+                        auto argv = std::vector<char *>{};
 
-                    [[fallthrough]];
-                case -1:
+                        static auto arg0 = cli_program + " (referer=udds-broadcast-client)"s;
+                        argv.push_back(arg0.data());
+
+                        for (auto& option : options)
+                            argv.push_back(option.data());
+
+                        argv.push_back(nullptr);
+                        return argv;
+                    }().data()
+                );
+                std::_Exit(EXIT_FAILURE);
+            } else {
+                ::close(this->to_cli[0]), ::close(this->from_cli[1]);
+
+                if (cli_pid == -1)
                     throw std::runtime_error{
                         "Failed to create sub-process " + std::string{cli_program}
                     };
-                default:
-                    ::close(to_cli[0]), ::close(from_cli[1]);
-
             }
-
         }
     };
 }

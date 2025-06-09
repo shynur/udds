@@ -4,9 +4,11 @@ SHELL = /bin/bash -O globstar
 all:  build/Makefile  \
       include/udds.hpp include/broadcast.hpp  \
 	  src/send.cpp src/receive.cpp  \
-	  src/udds-broadcast-cli.cpp
+	  src/udds-broadcast-cli.cpp  \
+	  src/udds-broadcast-client-send.cpp src/udds-broadcast-client-receive.cpp
 	cd build; make -j
-	rm -f /bin/udds-broadcast-cli; ln -s {build,/bin}/udds-broadcast-cli
+	rm -f /{bin,usr/bin}/udds-broadcast-cli;  \
+	cp build/udds-broadcast-cli /bin/ || cp build/udds-broadcast-cli /usr/bin/
 
 build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)
 	make clean
