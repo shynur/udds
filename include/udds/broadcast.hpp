@@ -27,10 +27,10 @@
     #include "UddsClkSyncPackProto.hpp"
     #include "UddsClkSyncPackProtoPubSubTypes.hpp"
 #else
-    #include "../protos/UddsJsonProto.hpp"
-    #include "../protos/UddsJsonProtoPubSubTypes.hpp"
-    #include "../protos/UddsClkSyncPackProto.hpp"
-    #include "../protos/UddsClkSyncPackProtoPubSubTypes.hpp"
+    #include "../../protos/UddsJsonProto.hpp"
+    #include "../../protos/UddsJsonProtoPubSubTypes.hpp"
+    #include "../../protos/UddsClkSyncPackProto.hpp"
+    #include "../../protos/UddsClkSyncPackProtoPubSubTypes.hpp"
 #endif
 
 namespace shynur::udds::broadcast {

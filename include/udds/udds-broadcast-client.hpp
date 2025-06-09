@@ -104,14 +104,14 @@ namespace shynur::udds {
 
         Broadcast_Client(const std::vector<std::string>& options)
         : to_cli{
-            [] -> std::decay_t<decltype(this->to_cli)> {
+            []() -> std::decay_t<decltype(this->to_cli)> {
                 int fd[2];
                 ::pipe(fd);
                 std::cerr << "to_cli: " << fd[0] << " <- " << fd[1] << '\n';
                 return {fd[0], fd[1]};
             }()
         }, from_cli{
-            [] -> std::decay_t<decltype(this->from_cli)> {
+            []() -> std::decay_t<decltype(this->from_cli)> {
                 int fd[2];
                 ::pipe(fd);
                 std::cerr << "from_cli: " << fd[0] << " <- " << fd[1] << '\n';
