@@ -6,11 +6,13 @@
 #include <vector>
 #include <cstdint>
 #include <cstdlib>
+#include <csignal>
 #include <cassert>
 #include <memory>
 #include <utility>
 #include <istream>
 #include <ostream>
+#include <signal.h>  // kill
 #include <algorithm>
 #include <cstdio>
 #include <ext/stdio_filebuf.h>
@@ -33,10 +35,11 @@ namespace shynur::udds {
          * @note 需要能在 PATH 中查找到.
          */
         static constexpr char cli_program[] = "udds-broadcast-cli";
+        static const inline std::string cli_option_end_of_json = "shynur.udds.json.end"s;
         const decltype(::fork()) cli_pid;
 
         const std::array<int, 2> to_cli, from_cli;
-        struct Broadcast_Server_IO {
+        class Broadcast_Server_IO {
             std::pair<
                 const std::unique_ptr<__gnu_cxx::stdio_filebuf<char>>,
                 std::basic_ostream<char>
@@ -45,7 +48,7 @@ namespace shynur::udds {
                 const std::unique_ptr<__gnu_cxx::stdio_filebuf<char>>,
                 std::basic_istream<char>
             > from_cli;
-
+          public:
             Broadcast_Server_IO(const int to_cli, const int from_cli)
             : to_cli{
                 [&, this] {
@@ -70,6 +73,9 @@ namespace shynur::udds {
             auto& operator>>(auto&& o) {
                 this->from_cli.second >> std::forward<decltype(o)>(o);
                 return *this;
+            }
+            friend decltype(auto) getline(Broadcast_Server_IO& io, std::string& line) {
+                return std::getline(io.from_cli.second, line);
             }
         } cli_io;
 
@@ -152,10 +158,99 @@ namespace shynur::udds {
 
         ~Broadcast_Client() {
             ::close(this->to_cli[1]), ::close(this->from_cli[0]);
+            ::kill(this->cli_pid, SIGINT);
         }
 
+        /**
+         * @brief 委托 server 向广播系统发布消息.
+         * @param message x / y / theta / json 以外的字段会被忽略.
+         */
         auto send(const UddsJsonStruct& message) {
+            this->cli_io << "send\n"
+                         << "x " << message.x << '\n'
+                         << "y " << message.y << '\n'
+                         << "theta " << message.theta << '\n'
+                         << "json " << message.json << '\n'
+                         << cli_option_end_of_json << std::endl;
+        }
 
+        /**
+         * @brief 获取所有已接收的消息.
+         *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
+         */
+        auto received_from() {
+            this->cli_io << "received_from.keys\n";
+            unsigned num_cars;
+            this->cli_io >> num_cars;
+
+            auto robots = std::vector<std::string>{};
+            for (auto i = 0u; i != num_cars; ++i) {
+                std::string robot_id;
+                this->cli_io >> robot_id;
+                robots.push_back(std::move(robot_id));
+            }
+
+            struct Range {
+                Broadcast_Client& client;
+                const std::vector<std::string> robot_ids;
+
+                struct iterator {
+                    Broadcast_Client& client;
+                    decltype(Range::robot_ids)::const_iterator probot;
+                    mutable UddsJsonStruct current_message{};
+
+                    auto& operator++() {
+                        ++this->probot;
+                        return *this;
+                    }
+                    auto operator*() const -> std::pair<std::string, UddsJsonStruct> {
+                        if (this->current_message.robot_id == *this->probot)
+                            return {*this->probot, this->current_message};
+
+                        this->client.cli_io << "received_from.operator[]\n"
+                                            << *this->probot << std::endl;
+
+                        for (auto _ : std::array<char, /* UddsJson 字段数量: */ 7>{}) {
+                            std::string field_name;
+                            this->client.cli_io >> field_name;
+                            if (field_name == "send_timestamp_ns")
+                                this->client.cli_io >> this->current_message.send_timestamp_ns;
+                            else if (field_name == "received_timestamp_ns")
+                                this->client.cli_io >> this->current_message.received_timestamp_ns;
+                            else if (field_name == "robot_id")
+                                this->client.cli_io >> this->current_message.robot_id;
+                            else if (field_name == "x")
+                                this->client.cli_io >> this->current_message.x;
+                            else if (field_name == "y")
+                                this->client.cli_io >> this->current_message.y;
+                            else if (field_name == "theta")
+                                this->client.cli_io >> this->current_message.theta;
+                            else if (field_name == "json") {
+                                std::string json;
+                                for (
+                                    std::string line;
+                                    getline(this->client.cli_io, line), line != cli_option_end_of_json;
+                                )
+                                    json += line + '\n';
+                                this->current_message.json = std::move(json);
+                            } else
+                                throw std::runtime_error{
+                                    std::format("未知字段: {}", field_name)
+                                };
+                        }
+
+                        return **this;
+                    }
+                    auto operator!=(const iterator& other) const {
+                        return this->probot != other.probot;
+                    }
+                };
+
+                auto begin() const -> iterator {return {this->client, this->robot_ids.cbegin()};}
+                auto   end() const -> iterator {return {this->client, this->robot_ids.cend()  };}
+            };
+
+            return Range{*this, std::move(robots)};
         }
     };
 }

@@ -101,10 +101,10 @@ int main(const int argc, const char *const argv[]) {
                 message->json(),
                 parse_args(args).end_of_json
             ) << std::endl;
-        } else if (fn == "received_from.size") {
+        } else if (fn == "received_from.keys") {
             std::cout << shynur::udds::broadcast::received_from.size()
                       << std::endl;
-        } else if (fn == "received_from.keys") {
+
             for (const auto& robot_id : shynur::udds::broadcast::received_from.keys()) {
                 assert(
                     std::ranges::none_of(
@@ -134,8 +134,7 @@ int main(const int argc, const char *const argv[]) {
                     )
                         json += line + '\n';
                     message.json() = std::move(json);
-                }
-                else
+                } else
                     throw std::runtime_error{
                         std::format("未知字段: {}", field_name)
                     };
