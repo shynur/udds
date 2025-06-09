@@ -25,14 +25,14 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 
 add_executable(send src/example.use-udds-header-file/send.cpp ${UddsExample_SOURCES_CXX})
-target_compile_features(send PRIVATE cxx_std_26)  # latest C++ standard
+target_compile_features(send PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(send fastdds fastcdr tbb)
 add_executable(receive src/example.use-udds-header-file/receive.cpp ${UddsExample_SOURCES_CXX})
-target_compile_features(receive PRIVATE cxx_std_26)  # latest C++ standard
+target_compile_features(receive PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(receive fastdds fastcdr tbb)
 
 add_executable(udds-broadcast-cli src/udds-broadcast-cli.cpp ${UddsExample_SOURCES_CXX})
-target_compile_features(udds-broadcast-cli PRIVATE cxx_std_26)  # latest C++ standard
+target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
 
 add_executable(easily-send src/example.use-individual-process/easily-send.cpp)
