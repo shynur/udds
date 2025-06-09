@@ -24,10 +24,10 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 
 
-add_executable(send src/send.cpp ${UddsExample_SOURCES_CXX})
+add_executable(send src/example.use-udds-header-file/send.cpp ${UddsExample_SOURCES_CXX})
 target_compile_features(send PRIVATE cxx_std_26)  # latest C++ standard
 target_link_libraries(send fastdds fastcdr tbb)
-add_executable(receive src/receive.cpp ${UddsExample_SOURCES_CXX})
+add_executable(receive src/example.use-udds-header-file/receive.cpp ${UddsExample_SOURCES_CXX})
 target_compile_features(receive PRIVATE cxx_std_26)  # latest C++ standard
 target_link_libraries(receive fastdds fastcdr tbb)
 
@@ -35,7 +35,7 @@ add_executable(udds-broadcast-cli src/udds-broadcast-cli.cpp ${UddsExample_SOURC
 target_compile_features(udds-broadcast-cli PRIVATE cxx_std_26)  # latest C++ standard
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
 
-add_executable(udds-broadcast-client-send src/udds-broadcast-client-send.cpp)
-target_compile_features(udds-broadcast-client-send PRIVATE cxx_std_14)  # rbk
-add_executable(udds-broadcast-client-receive src/udds-broadcast-client-receive.cpp)
-target_compile_features(udds-broadcast-client-receive PRIVATE cxx_std_14)  # rbk
+add_executable(easily-send src/example.use-individual-process/easily-send.cpp)
+target_compile_features(easily-send PRIVATE cxx_std_14)  # rbk
+add_executable(easily-receive src/example.use-individual-process/easily-receive.cpp)
+target_compile_features(easily-receive PRIVATE cxx_std_14)  # rbk

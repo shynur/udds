@@ -2,13 +2,14 @@ SHELL = /bin/bash -O globstar
 
 .PHONY: all
 all:  build/Makefile  \
-      include/udds.hpp include/broadcast.hpp  \
-	  src/send.cpp src/receive.cpp  \
+      include/udds/udds.hpp include/udds/broadcast.hpp  \
+	  include/udds/udds-broadcast-client.hpp  \
+	  src/example.use-udds-header-file/send.cpp src/example.use-udds-header-file/receive.cpp  \
 	  src/udds-broadcast-cli.cpp  \
-	  src/udds-broadcast-client-send.cpp src/udds-broadcast-client-receive.cpp
+	  src/example.use-individual-process/easily-send.cpp src/example.use-individual-process/easily-receive.cpp
 	cd build; make -j
-	rm -f /{bin,usr/bin}/udds-broadcast-cli;  \
-	cp build/udds-broadcast-cli /bin/ || cp build/udds-broadcast-cli /usr/bin/
+	sudo bash -c  \
+	"rm -f /{bin,usr/bin}/udds-broadcast-cli; cp build/udds-broadcast-cli /bin/ || cp build/udds-broadcast-cli /usr/bin/"
 
 build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)
 	make clean
