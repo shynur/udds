@@ -30,6 +30,6 @@ target_compile_features(udds-broadcast-cli PRIVATE cxx_std_26)  # latest C++ sta
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
 
 add_executable(udds-broadcast-client-send src/udds-broadcast-client-send.cpp)
-target_compile_features(udds-broadcast-client-send PRIVATE cxx_std_14)
+target_compile_features(udds-broadcast-client-send PRIVATE cxx_std_14)  # rbk
 add_executable(udds-broadcast-client-receive src/udds-broadcast-client-receive.cpp)
-target_compile_features(udds-broadcast-client-receive PRIVATE cxx_std_14)
+target_compile_features(udds-broadcast-client-receive PRIVATE cxx_std_14)  # rbk
