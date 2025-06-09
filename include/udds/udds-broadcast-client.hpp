@@ -139,7 +139,7 @@ namespace shynur::udds {
 
                     ::execvp(
                         cli_program,
-                        [options=options] mutable {
+                        [options=options]() mutable {
                             auto argv = std::vector<char *>{};
 
                             static auto arg0 = cli_program + " (referer=udds-broadcast-client)"s;
