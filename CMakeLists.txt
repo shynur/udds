@@ -24,6 +24,10 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 
 
+add_compile_options(-Wpedantic -Wall -W)
+
+
+
 add_executable(send src/example.use-udds-header-file/send.cpp ${UddsExample_SOURCES_CXX})
 target_compile_features(send PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(send fastdds fastcdr tbb)

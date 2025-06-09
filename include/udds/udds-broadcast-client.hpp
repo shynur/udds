@@ -67,10 +67,17 @@ namespace shynur::udds {
                 }()
             } {}
 
-            auto& operator<<(auto&& i) {
+#if __cplusplus >= 202002L
+            auto operator<<(auto&& i)
+#else
+            template <typename T>
+            auto operator<<(T&& i)
+#endif
+            -> auto& {
                 this->to_cli.second << std::forward<decltype(i)>(i);
                 return *this;
             }
+
             auto& operator<<(
                 std::decay_t<decltype(Broadcast_Server_IO::to_cli)::second_type>&
                 (* endl_like)(std::decay_t<decltype(Broadcast_Server_IO::to_cli)::second_type>&)
@@ -78,10 +85,18 @@ namespace shynur::udds {
                 this->to_cli.second << endl_like;
                 return *this;
             }
-            auto& operator>>(auto&& o) {
+
+#if __cplusplus >= 202002L
+            auto operator>>(auto&& o)
+#else
+            template <typename T>
+            auto operator>>(T&& o)
+#endif
+            -> auto& {
                 this->from_cli.second >> std::forward<decltype(o)>(o);
                 return *this;
             }
+
             friend decltype(auto) getline(Broadcast_Server_IO& io, std::string& line) {
                 return std::getline(io.from_cli.second, line);
             }
