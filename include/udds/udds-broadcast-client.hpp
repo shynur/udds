@@ -249,7 +249,7 @@ namespace shynur::udds {
                                 this->current_message.json = std::move(json);
                             } else
                                 throw std::runtime_error{
-                                    std::format("未知字段: {}", field_name)
+                                    "未知字段: {}" + field_name
                                 };
                         }
 
