@@ -1,13 +1,13 @@
 #define SHYNUR_UDDS_USED_BY_SEER_RBK
 #include "udds-broadcast-client.hpp"
+#include <cstdio>
+#include <iostream>
 
 int main(int, const char *const argv[]) {
     rbk::udds::Broadcast_Client c{argv[1], 1};
 
-    while (true) {
-        int i;
-        std::cin >> i;
-        std::cout << "\n\n------------------------------------------\n\n";
+    while (std::getchar() != 'q') {
+        std::cout << "\n\n------------------- loop -------------------\n\n";
 
         for (auto [robot_id, message] : c.received_from()) {
             std::cout << "小车 ID: " << robot_id << '\n'
