@@ -110,7 +110,7 @@ namespace shynur::udds {
             const std::string robot_id,
             const std::uint8_t fastdds_domain
         ): Broadcast_Client{
-            std::vector{
+            std::vector<std::string>{
                 "--robot_id=" + robot_id,
                 "--fastdds_domain=" + std::to_string(fastdds_domain),
                 "--end_of_json=" + cli_option_end_of_json,
@@ -158,10 +158,20 @@ namespace shynur::udds {
                             auto argv = std::vector<char *>{};
 
                             static auto arg0 = cli_program + " (referer=udds-broadcast-client)"s;
-                            argv.push_back(arg0.data());
+                            argv.push_back(
+#if __cplusplus < 201703L
+                                (char *)
+#endif
+                                arg0.data()
+                            );
 
                             for (auto& option : options)
-                                argv.push_back(option.data());
+                                argv.push_back(
+#if __cplusplus < 201703L
+                                (char *)
+#endif
+                                    option.data()
+                                );
 
                             argv.push_back(nullptr);
                             return argv;
