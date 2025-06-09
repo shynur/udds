@@ -74,8 +74,10 @@ int main(const int argc, const char *const argv[]) {
             std::string robot_id;
             std::cin >> robot_id;  // 假设 robot_id 中没有空白字符.
 
-            std::cout << shynur::udds::broadcast::received_from.contains(robot_id)
-                      << std::endl;
+            std::cout << (
+                shynur::udds::broadcast::received_from.contains(robot_id)
+                ? "true" : "false"
+            ) << std::endl;
         } else if (fn == "received_from.operator[]") {
             std::string robot_id;
             std::cin >> robot_id;  // 假设 robot_id 中没有空白字符.
