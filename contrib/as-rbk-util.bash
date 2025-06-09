@@ -12,13 +12,10 @@ make
 (
     cd include/udds
     for f in *.hpp; do
-        echo '#define SHYNUR_UDDS_USED_BY_SEER_RBK 30408UL' > ../$f
-        cat $f >> ../$f
+        echo '#define SHYNUR_UDDS_USED_BY_SEER_RBK 30408UL' > ../../$f
+        cat $f >> ../../$f
     done
 )
-
-rm -f udds
-ln -s `pwd -P`/include/udds udds
 
 for f in protos/*; do
     mv $f .
