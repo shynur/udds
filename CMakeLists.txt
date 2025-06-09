@@ -3,6 +3,12 @@ project(UddsExample)
 
 
 
+# 尽可能使用静态链接.
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+
+
+
 if(NOT fastcdr_FOUND)
     find_package(fastcdr 2 REQUIRED)
 endif()
@@ -15,13 +21,6 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
-
-
-
-# 尽可能使用静态链接.
-set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 
 
 
