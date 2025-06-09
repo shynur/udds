@@ -52,19 +52,29 @@ namespace shynur::udds {
           public:
             Broadcast_Server_IO(const int to_cli, const int from_cli)
             : to_cli{
+#if __cplusplus >= 201703L
                 [&, this] {
                     auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(to_cli, std::ios::out);
                     return std::decay_t<decltype(this->to_cli)>{
                         std::move(buf), buf.get()
                     };
                 }()
+#else
+                nullptr,
+                __gnu_cxx::stdio_filebuf<char>{to_cli, std::ios::out}
+#endif
             }, from_cli{
+#if __cplusplus >= 201703L
                 [&, this] {
                     auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(from_cli, std::ios::in);
                     return std::decay_t<decltype(this->from_cli)>{
                         std::move(buf), buf.get()
                     };
                 }()
+#else
+                nullptr,
+                __gnu_cxx::stdio_filebuf<char>{from_cli, std::ios::in}
+#endif
             } {}
 
 #if __cplusplus >= 202002L
