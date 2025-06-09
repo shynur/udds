@@ -81,7 +81,7 @@ namespace shynur::udds {
 
         /**
          * @brief 创建一个 client, 并连接到一个新建的 server 上.
-         * @param fastdds_domain 暂时不生效, 随便指定一个值即可.
+         * @param fastdds_domain 暂时只能设置为 1.
          */
         Broadcast_Client(
             const std::string robot_id,
@@ -254,3 +254,9 @@ namespace shynur::udds {
         }
     };
 }
+
+#ifdef SHYNUR_UDDS_USED_BY_SEER_RBK
+namespace rbk {
+    namespace udds = shynur::udds;
+}
+#endif
