@@ -31,6 +31,9 @@ namespace shynur::udds {
     };
 
     struct [[gnu::weak]] Broadcast_Client {
+#if __cplusplus < 201703L
+        __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
+#endif
         /**
          * @brief Server 程序.
          * @note 需要能在 PATH 中查找到.
@@ -60,8 +63,8 @@ namespace shynur::udds {
                     };
                 }()
 #else
-                nullptr,
-                __gnu_cxx::stdio_filebuf<char>{to_cli, std::ios::out}
+                _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{to_cli, std::ios::out},
+                _tmp_var_within_init
 #endif
             }, from_cli{
 #if __cplusplus >= 201703L
@@ -72,8 +75,8 @@ namespace shynur::udds {
                     };
                 }()
 #else
-                nullptr,
-                __gnu_cxx::stdio_filebuf<char>{from_cli, std::ios::in}
+                _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{from_cli, std::ios::in},
+                _tmp_var_within_init
 #endif
             } {}
 
