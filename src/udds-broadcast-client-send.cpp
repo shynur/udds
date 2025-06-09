@@ -7,7 +7,7 @@ int main(int, const char *const argv[]) {
     auto msg = rbk::udds::UddsJsonStruct{};
 
     while (true) {
-        std::cerr << "检测 stderr 是否可用\n";
+        std::cerr << "检测 stderr 是否可用...\n";
         std::cin >> msg.json;
         if (msg.json == "q")
             break;

@@ -36,9 +36,9 @@ namespace shynur::udds {
          */
         static constexpr char cli_program[] = "udds-broadcast-cli";
         static const inline std::string cli_option_end_of_json = "shynur.udds.json.end"s;
-        const decltype(::fork()) cli_pid;
 
         const std::array<int, 2> to_cli, from_cli;
+        const decltype(::fork()) cli_pid;  // cli_pid 一定要在 to_cli 和 from_cli 之后声明!!!
         class Broadcast_Server_IO {
             std::pair<
                 const std::unique_ptr<__gnu_cxx::stdio_filebuf<char>>,
@@ -107,12 +107,14 @@ namespace shynur::udds {
             [] -> std::decay_t<decltype(this->to_cli)> {
                 int fd[2];
                 ::pipe(fd);
+                std::cerr << "to_cli: " << fd[0] << " <- " << fd[1] << '\n';
                 return {fd[0], fd[1]};
             }()
         }, from_cli{
             [] -> std::decay_t<decltype(this->from_cli)> {
                 int fd[2];
                 ::pipe(fd);
+                std::cerr << "from_cli: " << fd[0] << " <- " << fd[1] << '\n';
                 return {fd[0], fd[1]};
             }()
         }, cli_pid{
@@ -163,7 +165,9 @@ namespace shynur::udds {
 
                 return cli_pid;
             }()
-        }, cli_io{this->to_cli[1], this->from_cli[0]} {}
+        }, cli_io{this->to_cli[1], this->from_cli[0]} {
+            std::cerr << "Client 创建完成!\n";
+        }
 
         ~Broadcast_Client() {
             ::close(this->to_cli[1]), ::close(this->from_cli[0]);
