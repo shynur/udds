@@ -70,6 +70,13 @@ namespace shynur::udds {
                 this->to_cli.second << std::forward<decltype(i)>(i);
                 return *this;
             }
+            auto& operator<<(
+                std::decay_t<decltype(Broadcast_Server_IO::to_cli)::second_type>&
+                (* endl_like)(std::decay_t<decltype(Broadcast_Server_IO::to_cli)::second_type>&)
+            ) {
+                this->to_cli.second << endl_like;
+                return *this;
+            }
             auto& operator>>(auto&& o) {
                 this->from_cli.second >> std::forward<decltype(o)>(o);
                 return *this;
