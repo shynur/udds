@@ -6,9 +6,15 @@ int main(int, const char *const argv[]) {
 
     auto msg = rbk::udds::UddsJsonStruct{};
 
-    while (std::cin >> msg.json)
+    while (true) {
+        std::cerr << "检测 stderr 是否可用\n";
+        std::cin >> msg.json;
         if (msg.json == "q")
             break;
-        else
+        else {
+            std::cerr << "即将发布消息...\n";
             c.send(msg);
+            std::cerr << "消息已发布.\n";
+        }
+    }
 }

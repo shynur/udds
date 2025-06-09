@@ -18,6 +18,13 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 
 
+# 尽可能使用静态链接.
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+
+
+
 add_executable(send src/send.cpp ${UddsExample_SOURCES_CXX})
 target_compile_features(send PRIVATE cxx_std_26)  # latest C++ standard
 target_link_libraries(send fastdds fastcdr tbb)

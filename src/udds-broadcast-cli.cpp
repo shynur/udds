@@ -64,7 +64,11 @@ int main(const int argc, const char *const argv[]) {
         );
 
     std::signal(SIGINT, [](int) {std::exit(0);});
+    if (parse_args(args).development_mode)
+        std::cerr << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
+    if (parse_args(args).development_mode)
+        std::cerr << "Broadcast server initialized.\n";
 
     while (true) {
         std::string fn;
@@ -116,6 +120,9 @@ int main(const int argc, const char *const argv[]) {
                 std::cout << *robot_id << std::endl;
             }
         } else if (fn == "send") {
+            if (parse_args(args).development_mode)
+                std::cerr << "will send...\n";
+
             auto message = UddsJsonProto{};
             for (auto _ : std::views::iota(0, /* number of fields: */ 4)) {
                 std::string field_name;

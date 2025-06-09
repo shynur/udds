@@ -24,9 +24,9 @@ namespace shynur::udds {
         std::uint64_t
             send_timestamp_ns = 0,
             received_timestamp_ns = 0;
-        std::string robot_id;
+        std::string robot_id = "";
         double x = 0.0, y = 0.0, theta = 0.0;
-        std::string json;
+        std::string json = "";
     };
 
     struct [[gnu::weak]] Broadcast_Client {
@@ -97,6 +97,8 @@ namespace shynur::udds {
             std::vector{
                 "--robot_id=" + robot_id,
                 "--fastdds_domain=" + std::to_string(fastdds_domain),
+                "--end_of_json=" + cli_option_end_of_json,
+                "--development_mode"s,
             }
         } {}
 
@@ -186,9 +188,10 @@ namespace shynur::udds {
          *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
          */
         auto received_from() {
-            this->cli_io << "received_from.keys\n";
+            this->cli_io << "received_from.keys" << std::endl;
             unsigned num_cars;
             this->cli_io >> num_cars;
+            std::cerr << "num_cars=" << num_cars << '\n';
 
             auto robots = std::vector<std::string>{};
             for (auto i = 0u; i != num_cars; ++i) {

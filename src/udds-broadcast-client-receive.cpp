@@ -5,7 +5,8 @@ int main(int, const char *const argv[]) {
     rbk::udds::Broadcast_Client c{argv[1], 1};
 
     while (true) {
-        getchar();
+        int i;
+        std::cin >> i;
         std::cout << "\n\n------------------------------------------\n\n";
 
         for (auto [robot_id, message] : c.received_from()) {
