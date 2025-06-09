@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <csignal>
 #include <cassert>
+#include <type_traits>
 #include <memory>
 #include <utility>
 #include <istream>
