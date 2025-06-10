@@ -9,7 +9,7 @@ all:  build/Makefile  \
 	  src/example.use-individual-process/easily-send.cpp src/example.use-individual-process/easily-receive.cpp
 	cd build; make -j
 	sudo bash -c  \
-	"rm -f /{bin,usr/bin}/udds-broadcast-cli; cp build/udds-broadcast-cli /bin/ || cp build/udds-broadcast-cli /usr/bin/"
+	"rm -f /{bin,usr/bin}/udds-broadcast-cli; ln -s `pwd -P`/build/udds-broadcast-cli /bin/"
 
 build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)
 	make clean

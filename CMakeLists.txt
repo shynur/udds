@@ -38,6 +38,7 @@ target_link_libraries(receive fastdds fastcdr tbb)
 add_executable(udds-broadcast-cli src/udds-broadcast-cli.cpp ${UddsExample_SOURCES_CXX})
 target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
+target_link_options(udds-broadcast-cli PRIVATE "-Wl,-rpath,'$ORIGIN'")
 
 add_executable(easily-send src/example.use-individual-process/easily-send.cpp)
 target_compile_features(easily-send PRIVATE cxx_std_14)  # rbk
