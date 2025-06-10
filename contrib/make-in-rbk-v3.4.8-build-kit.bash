@@ -19,4 +19,4 @@ mkdir -p bin
 clang++-6.0 -std=c++14 -O0 -g3 -I./include  \
     -static-libgcc -static-libstdc++  \
     src/easily-send-receive.cpp  \
-    bin/easily-send-receive
+    -o bin/easily-send-receive
