@@ -9,7 +9,7 @@ all:  build/Makefile  \
 	  src/example.use-individual-process/easily-send.cpp src/example.use-individual-process/easily-receive.cpp
 	cd build; make -j
 	rm -f build/udds-broadcast-cli
-	ln -s `pwd -P`/build/udds-broadcast-cli.d/udds-broadcast-cli udds-broadcast-cli
+	ln -s `pwd -P`/build/udds-broadcast-cli.d/udds-broadcast-cli build/udds-broadcast-cli
 	sudo bash -c  \
 	"rm -f /{bin,usr/bin}/udds-broadcast-cli; ln -s `pwd -P`/build/udds-broadcast-cli /bin/"
 
