@@ -31,19 +31,20 @@ namespace shynur::udds {
     };
 
     struct [[gnu::weak]] Broadcast_Client {
-#if __cplusplus < 201703L
-        __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
-#endif
         /**
          * @brief Server 程序.
          * @note 需要能在 PATH 中查找到.
          */
-        static constexpr char cli_program[] = "udds-broadcast-cli";
+        static const inline char cli_program[] = "udds-broadcast-cli";
         static const inline std::string cli_option_end_of_json = "shynur.udds.json.end"s;
 
         const std::array<int, 2> to_cli, from_cli;
         const decltype(::fork()) cli_pid;  // cli_pid 一定要在 to_cli 和 from_cli 之后声明!!!
         class Broadcast_Server_IO {
+#if __cplusplus < 201703L
+        __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
+#endif
+
             std::pair<
                 const std::unique_ptr<__gnu_cxx::stdio_filebuf<char>>,
                 std::basic_ostream<char>
