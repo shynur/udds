@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(UddsExample)
+project(UddsExample CXX)
 
 
 
@@ -26,7 +26,46 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 
 
-add_compile_options(-Wpedantic -Wall -W)
+add_compile_options(
+    -Wpedantic -Wall -W
+)
+
+add_compile_options(
+    "$<$<CONFIG:Debug>:-O0>" "$<$<CONFIG:Debug>:-g3>"
+    "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-types>"
+    "$<$<CONFIG:Debug>:-ggdb>"
+    "$<$<CONFIG:Debug>:-gcodeview>"
+    "$<$<CONFIG:Debug>:-gdwarf>"
+)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(
+        "$<$<CONFIG:Debug>:-gdwarf-5>"
+        "$<$<CONFIG:Debug>:-gbtf>" "$<$<CONFIG:Debug>:-gno-prune-btf>"
+        "$<$<CONFIG:Debug>:-gctf>"
+        "$<$<CONFIG:Debug>:-gvms>"
+        "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-symbol>"
+        "$<$<CONFIG:Debug>:-femit-class-debug-always>"
+        "$<$<CONFIG:Debug>:-fno-merge-debug-strings>"
+        "$<$<CONFIG:Debug>:-fvar-tracking>"
+        "$<$<CONFIG:Debug>:-fvar-tracking-assignments>"
+        "$<$<CONFIG:Debug>:-gdwarf32>" "$<$<CONFIG:Debug>:-gdwarf64>"
+        "$<$<CONFIG:Debug>:-gdescribe-dies>"
+        "$<$<CONFIG:Debug>:-gpubnames>"
+        "$<$<CONFIG:Debug>:-ggnu-pubnames>"
+        "$<$<CONFIG:Debug>:-fdebug-types-section>"
+        "$<$<CONFIG:Debug>:-gno-strict-dwarf>"
+        "$<$<CONFIG:Debug>:-gcolumn-info>"
+        "$<$<CONFIG:Debug>:-gstatement-frontiers>"
+        "$<$<CONFIG:Debug>:-ginline-points>"
+    )
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(
+        "$<$<CONFIG:Debug>:-fstandalone-debug>"
+        "$<$<CONFIG:Debug>:-fdebug-macro>"
+        "$<$<CONFIG:Debug>:-lldb>" "$<$<CONFIG:Debug>:-gsce>" "$<$<CONFIG:Debug>:-gdbx>"
+    )
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 
