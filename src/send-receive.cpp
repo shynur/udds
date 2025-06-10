@@ -28,6 +28,7 @@ int main(int, const char *argv[2]) {
 
                 shynur::udds::broadcast::send(msg);
             }
+                break;
             case '1':
                 std::cout << std::size(shynur::udds::broadcast::received_from) << '\n';
                 break;
