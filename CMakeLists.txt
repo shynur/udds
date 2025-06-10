@@ -40,7 +40,7 @@ target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ sta
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
 target_link_options(udds-broadcast-cli PRIVATE "-Wl,-rpath,'$ORIGIN'")
 set_target_properties(udds-broadcast-cli PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/udds-broadcast-cli"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/udds-broadcast-cli.d"
 )
 
 add_executable(easily-send src/example.use-individual-process/easily-send.cpp)
