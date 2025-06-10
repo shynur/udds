@@ -2,10 +2,10 @@
 \#?*#
 .#?*#
 
-/build/
+/cmake-build/
+/bin/
 
 /.cache/
-
 /.vscode/
 
 /protos/?*.hpp

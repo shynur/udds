@@ -5,7 +5,9 @@ project(UddsExample)
 
 # 尽可能使用静态链接.
 set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS
+    "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++"
+)
 
 
 
@@ -25,25 +27,42 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 
 
 add_compile_options(-Wpedantic -Wall -W)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 
 
-add_executable(send src/example.use-udds-header-file/send.cpp ${UddsExample_SOURCES_CXX})
+add_executable(send
+    src/example.use-udds-header-file/send.cpp
+    ${UddsExample_SOURCES_CXX}
+)
 target_compile_features(send PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(send fastdds fastcdr tbb)
-add_executable(receive src/example.use-udds-header-file/receive.cpp ${UddsExample_SOURCES_CXX})
+
+add_executable(receive
+    src/example.use-udds-header-file/receive.cpp
+    ${UddsExample_SOURCES_CXX}
+)
 target_compile_features(receive PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(receive fastdds fastcdr tbb)
 
-add_executable(udds-broadcast-cli src/udds-broadcast-cli.cpp ${UddsExample_SOURCES_CXX})
+add_executable(udds-broadcast-cli
+    src/udds-broadcast-cli.cpp
+    ${UddsExample_SOURCES_CXX}
+)
 target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
 target_link_options(udds-broadcast-cli PRIVATE "-Wl,-rpath,$ORIGIN")
-set_target_properties(udds-broadcast-cli PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/udds-broadcast-cli.d"
+set_target_properties(udds-broadcast-cli
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/udds-broadcast-cli.d"
 )
 
-add_executable(easily-send src/example.use-individual-process/easily-send.cpp)
+add_executable(easily-send
+    src/example.use-individual-process/easily-send.cpp
+)
 target_compile_features(easily-send PRIVATE cxx_std_14)  # rbk
-add_executable(easily-receive src/example.use-individual-process/easily-receive.cpp)
+
+add_executable(easily-receive
+    src/example.use-individual-process/easily-receive.cpp
+)
 target_compile_features(easily-receive PRIVATE cxx_std_14)  # rbk
