@@ -43,7 +43,7 @@ namespace shynur::udds {
         const decltype(::fork()) cli_pid;  // cli_pid 一定要在 to_cli 和 from_cli 之后声明!!!
         class Broadcast_Server_IO {
 #if __cplusplus < 201703L
-        __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
+            __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
 #endif
 
             std::pair<
