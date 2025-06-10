@@ -3,14 +3,14 @@
 #include <thread>
 #include <chrono>
 #include <cstdlib>
-using namespace shynur;
 
-int main(int, const char *argv[]) {
-    udds::broadcast::init(argv[1]);  // 设置 robot_id
+int main(int, const char *argv[2]) {
+    shynur::udds::broadcast::init(argv[1]);  // 设置 robot_id
 
     while (true) {
         char choice;
         std::cout << "\n"
+                     "0) 发布\n"
                      "1) 打印 size\n"
                      "2) 打印所有消息的发件人\n"
                      "3) 是否收到了某个小车的消息\n"
@@ -20,11 +20,19 @@ int main(int, const char *argv[]) {
         std::cin >> choice;
         std::cout << '\n';
         switch (choice) {
+            case '0': {
+                auto msg = UddsJsonProto{};
+
+                std::cout << "输入消息文本: ";
+                std::cin >> msg.json();
+
+                shynur::udds::broadcast::send(msg);
+            }
             case '1':
-                std::cout << std::size(udds::broadcast::received_from) << '\n';
+                std::cout << std::size(shynur::udds::broadcast::received_from) << '\n';
                 break;
             case '2':
-                for (const auto& robot_id : udds::broadcast::received_from.keys())
+                for (const auto& robot_id : shynur::udds::broadcast::received_from.keys())
                     std::cout << *robot_id << '\n';
                 break;
             case '3': {

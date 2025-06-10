@@ -4,7 +4,7 @@ SHELL = /bin/bash -O globstar
 all:  cmake-build/Makefile  \
       include/udds/udds.hpp include/udds/broadcast.hpp  \
 	  include/udds/udds-broadcast-client.hpp  \
-	  src/example.use-udds-header-file/send.cpp src/example.use-udds-header-file/receive.cpp  \
+	  src/send-receive.cpp  \
 	  src/udds-broadcast-cli.cpp  \
 	  src/easily-send-receive.cpp
 	cd cmake-build; make -j

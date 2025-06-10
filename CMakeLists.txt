@@ -31,19 +31,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 
 
-add_executable(send
-    src/example.use-udds-header-file/send.cpp
+add_executable(send-receive
+    src/send-receive.cpp
     ${UddsExample_SOURCES_CXX}
 )
-target_compile_features(send PRIVATE cxx_std_23)  # latest C++ standard
-target_link_libraries(send fastdds fastcdr tbb)
-
-add_executable(receive
-    src/example.use-udds-header-file/receive.cpp
-    ${UddsExample_SOURCES_CXX}
-)
-target_compile_features(receive PRIVATE cxx_std_23)  # latest C++ standard
-target_link_libraries(receive fastdds fastcdr tbb)
+target_compile_features(send-receive PRIVATE cxx_std_23)  # latest C++ standard
+target_link_libraries(send-receive fastdds fastcdr tbb)
 
 add_executable(udds-broadcast-cli
     src/udds-broadcast-cli.cpp
