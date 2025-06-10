@@ -160,7 +160,7 @@ namespace shynur::udds::broadcast {
 
         message.send_timestamp_ns(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::steady_clock::now().time_since_epoch()
+                std::chrono::system_clock::now().time_since_epoch()
             ).count()
         );
 
@@ -236,7 +236,7 @@ namespace shynur::udds::broadcast {
                 [this](UddsClkSyncPackProto& pack) {
                     pack.received_timestamp(
                         std::chrono::duration_cast<std::chrono::nanoseconds>(
-                            std::chrono::steady_clock::now().time_since_epoch()
+                            std::chrono::system_clock::now().time_since_epoch()
                         ).count() / 1e9
                     );
 
@@ -300,7 +300,7 @@ namespace shynur::udds::broadcast {
                 );
                 pack.send_timestamp(
                     std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::steady_clock::now().time_since_epoch()
+                        std::chrono::system_clock::now().time_since_epoch()
                     ).count() / 1e9
                 );
                 replier_for[sender]->publish(std::move(pack));
@@ -332,7 +332,7 @@ namespace shynur::udds::broadcast {
                 );
                 pack.send_timestamp(
                     std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::steady_clock::now().time_since_epoch()
+                        std::chrono::system_clock::now().time_since_epoch()
                     ).count() / 1e9
                 );
                 sender.publish(pack);
@@ -377,7 +377,7 @@ namespace shynur::udds::broadcast {
             [](UddsJsonProto& message) {
                 message.received_timestamp_ns(
                     std::chrono::duration_cast<std::chrono::nanoseconds>(
-                        std::chrono::steady_clock::now().time_since_epoch()
+                        std::chrono::system_clock::now().time_since_epoch()
                     ).count()
                 );
 
