@@ -18,7 +18,7 @@ make
 )
 
 for f in protos/*; do
-    mv $f .
+    cp $f .
 done
 
 cat <<'EOF' > CMakeLists.txt
