@@ -64,7 +64,16 @@ int main(const int argc, const char *const argv[]) {
             parse_args(args).end_of_json
         );
 
-    std::signal(SIGINT, [](int) {std::exit(0);});
+    std::signal(
+        SIGINT,
+        [](int) {
+            std::cerr << std::format(
+                "\n*** [{}] Interrupt\n",
+                __FILE__
+            );
+            std::exit(0);
+        }
+    );
     if (parse_args(args).development_mode)
         std::cerr << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
