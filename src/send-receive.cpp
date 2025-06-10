@@ -39,7 +39,7 @@ int main(int, const char *argv[2]) {
                     std::string robot_id;
                     std::cout << "请输入小车 ID: ";
                     std::cin >> robot_id;
-                    std::cout << (udds::broadcast::received_from.contains(robot_id)
+                    std::cout << (shynur::udds::broadcast::received_from.contains(robot_id)
                                   ? "是的, 收到了.\n"
                                   : "没有收到.\n");
                 }
@@ -49,11 +49,11 @@ int main(int, const char *argv[2]) {
                     std::cout << "请输入小车 ID: ";
                     std::cin >> robot_id;
                     std::cout << "JSON: "
-                              << udds::broadcast::received_from[robot_id]->json() << '\n';
+                              << shynur::udds::broadcast::received_from[robot_id]->json() << '\n';
                 }
                 break;
             case '5':
-                for (auto [robot_id, message] : udds::broadcast::received_from)
+                for (auto [robot_id, message] : shynur::udds::broadcast::received_from)
                     std::cout << "小车 ID: " << *robot_id << '\n'
                               << "发送时间: " << message->send_timestamp_ns() << '\n'
                               << "延迟: " << message->received_timestamp_ns() - message->send_timestamp_ns() << " ns\n"
@@ -63,7 +63,7 @@ int main(int, const char *argv[2]) {
                 std::string robot_id;
                 std::cout << "请输入小车 ID: ";
                 std::cin >> robot_id;
-                std::cout << udds::broadcast::clock_offset_of.ns(robot_id) << " ns\n";
+                std::cout << shynur::udds::broadcast::clock_offset_of.ns(robot_id) << " ns\n";
                 break;
             }
             default:

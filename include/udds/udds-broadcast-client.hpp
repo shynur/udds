@@ -33,11 +33,12 @@ namespace shynur::udds {
 
     struct [[gnu::weak]] Broadcast_Client {
         /**
-         * @brief Server 程序.
-         * @note 需要能在 PATH 中查找到.
+         * @brief Server 程序及其参数.
+         * @note Server 需要能在 PATH 中查找到.
          */
-        static const inline char cli_program[] = "udds-broadcast-cli";
-        static const inline std::string cli_option_end_of_json = "shynur.udds.json.end"s;
+        static const char inline
+            cli_program[] = "udds-broadcast-cli",
+            cli_option_end_of_json[] = "shynur.udds.json.end";
 
         const std::array<int, 2> to_cli, from_cli;
         const decltype(::fork()) cli_pid;  // cli_pid 一定要在 to_cli 和 from_cli 之后声明!!!
@@ -126,9 +127,9 @@ namespace shynur::udds {
             const std::uint8_t fastdds_domain
         ): Broadcast_Client{
             std::vector<std::string>{
-                "--robot_id=" + robot_id,
-                "--fastdds_domain=" + std::to_string(fastdds_domain),
-                "--end_of_json=" + cli_option_end_of_json,
+                "--robot_id="s + robot_id,
+                "--fastdds_domain="s + std::to_string(fastdds_domain),
+                "--end_of_json="s + cli_option_end_of_json,
                 "--development_mode"s,
             }
         } {}
@@ -216,6 +217,7 @@ namespace shynur::udds {
 
             ::kill(this->cli_pid, SIGINT);
             ::waitpid(this->cli_pid, nullptr, 0);
+            std::cerr << "Udds Server 已经跟随 Client 被关闭.\n";
         }
 
         /**
