@@ -38,7 +38,7 @@ target_link_libraries(receive fastdds fastcdr tbb)
 add_executable(udds-broadcast-cli src/udds-broadcast-cli.cpp ${UddsExample_SOURCES_CXX})
 target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ standard
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
-target_link_options(udds-broadcast-cli PRIVATE "-Wl,-rpath,'$ORIGIN'")
+target_link_options(udds-broadcast-cli PRIVATE "-Wl,-rpath,$ORIGIN")
 set_target_properties(udds-broadcast-cli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/udds-broadcast-cli.d"
 )
