@@ -1,24 +1,25 @@
 #pragma once
-#include <unistd.h>  // dup2, close, fork, pipe
-#include <iostream>
-#include <stdexcept>
 #include <array>
+#include <cstdio>
+#include <memory>
+#include <string>
 #include <vector>
+#include <cassert>
+#include <csignal>
 #include <cstdint>
 #include <cstdlib>
-#include <csignal>
-#include <cassert>
-#include <sys/wait.h>  // waitpid
-#include <type_traits>
-#include <memory>
-#include <utility>
 #include <istream>
 #include <ostream>
+#include <utility>
+#include <iostream>
 #include <signal.h>  // kill
+#include <unistd.h>  // dup2, close, fork, pipe
 #include <algorithm>
-#include <cstdio>
+#include <stdexcept>
+#include <sys/wait.h>  // waitpid
+#include <type_traits>
 #include <ext/stdio_filebuf.h>
-#include <string>
+
 using namespace std::literals;
 
 namespace shynur::udds {
@@ -239,7 +240,7 @@ namespace shynur::udds {
          */
         auto received_from() {
             this->cli_io << "received_from.keys" << std::endl;
-            unsigned num_cars;
+            std::size_t num_cars;
             this->cli_io >> num_cars;
             std::cerr << "num_cars=" << num_cars << '\n';
 

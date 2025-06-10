@@ -116,7 +116,7 @@ int main(const int argc, const char *const argv[]) {
                 parse_args(args).end_of_json
             ) << std::endl;
         } else if (fn == "received_from.keys") {
-            std::cout << shynur::udds::broadcast::received_from.size()
+            std::cout << std::size(shynur::udds::broadcast::received_from)
                       << std::endl;
 
             for (const auto& robot_id : shynur::udds::broadcast::received_from.keys()) {
