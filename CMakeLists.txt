@@ -57,12 +57,7 @@ set_target_properties(udds-broadcast-cli
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/udds-broadcast-cli.d"
 )
 
-add_executable(easily-send
-    src/example.use-individual-process/easily-send.cpp
+add_executable(easily-send-receive
+    src/easily-send-receive.cpp
 )
-target_compile_features(easily-send PRIVATE cxx_std_14)  # rbk
-
-add_executable(easily-receive
-    src/example.use-individual-process/easily-receive.cpp
-)
-target_compile_features(easily-receive PRIVATE cxx_std_14)  # rbk
+target_compile_features(easily-send-receive PRIVATE cxx_std_14)  # rbk

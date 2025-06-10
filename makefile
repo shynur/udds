@@ -6,7 +6,7 @@ all:  cmake-build/Makefile  \
 	  include/udds/udds-broadcast-client.hpp  \
 	  src/example.use-udds-header-file/send.cpp src/example.use-udds-header-file/receive.cpp  \
 	  src/udds-broadcast-cli.cpp  \
-	  src/example.use-individual-process/easily-send.cpp src/example.use-individual-process/easily-receive.cpp
+	  src/easily-send-receive.cpp
 	cd cmake-build; make -j
 	rm -f bin/udds-broadcast-cli
 	ln -s ./udds-broadcast-cli.d/udds-broadcast-cli bin/udds-broadcast-cli
