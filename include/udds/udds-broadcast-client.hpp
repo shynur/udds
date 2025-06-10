@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <csignal>
 #include <cassert>
+#include <sys/wait.h>  // waitpid
 #include <type_traits>
 #include <memory>
 #include <utility>
@@ -182,7 +183,7 @@ namespace shynur::udds {
                             for (auto& option : options)
                                 argv.push_back(
 #if __cplusplus < 201703L
-                                (char *)
+                                    (char *)
 #endif
                                     option.data()
                                 );
@@ -211,7 +212,9 @@ namespace shynur::udds {
 
         ~Broadcast_Client() {
             ::close(this->to_cli[1]), ::close(this->from_cli[0]);
+
             ::kill(this->cli_pid, SIGINT);
+            ::waitpid(this->cli_pid, nullptr, 0);
         }
 
         /**
