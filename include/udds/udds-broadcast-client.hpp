@@ -204,6 +204,7 @@ namespace shynur::udds {
                     };
                 }
 
+                std::cerr << "创建成功, server PID: "s + std::to_string(cli_pid) + '\n';
                 return cli_pid;
             }()
         }, cli_io{this->to_cli[1], this->from_cli[0]} {
