@@ -208,7 +208,7 @@ namespace shynur::udds::broadcast {
                 0.0,
                 std::plus{},
                 [](const UddsClkSyncPackProto& pack) {
-                    std::cerr << std::format(
+                    std::clog << std::format(
                         "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
                         pack.latency(), pack.received_timestamp() - pack.send_timestamp()
                     );
@@ -240,9 +240,9 @@ namespace shynur::udds::broadcast {
                         ).count() / 1e9
                     );
 
-                    std::cerr << "Received clock sync pack.\n";
+                    std::clog << "Received clock sync pack.\n";
                     if (pack.latency()) {
-                        std::cerr << std::format(
+                        std::clog << std::format(
                             "Clock sync pack returned from {}\n",
                             pack.sender()
                         );
@@ -294,7 +294,7 @@ namespace shynur::udds::broadcast {
 
             {
                 const auto _ = std::shared_lock{repliers_mutex};
-                std::cerr << std::format(
+                std::clog << std::format(
                     "Replying clock sync pack to {}...\n",
                     sender
                 );
@@ -326,7 +326,7 @@ namespace shynur::udds::broadcast {
 
             for (const auto i : std::views::iota(0u, this->NUM_PACKS)) {
                 std::this_thread::sleep_for(40ms * this->NUM_PACKS);
-                std::cerr << std::format(
+                std::clog << std::format(
                     "Sending clock sync pack {}/{} to {}...\n",
                     i + 1, this->NUM_PACKS, json_sender
                 );

@@ -122,7 +122,7 @@ namespace shynur::udds {
                     )  // TODO: 更详细的错误信息
                 );
             else
-                std::cerr << std::format(
+                std::clog << std::format(
                     R"({{"role":"Publisher","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
                     "\n",
                     domain_id, participant_name, topic_name
@@ -291,7 +291,7 @@ namespace shynur::udds {
                     )  // TODO: 更详细的错误信息
                 );
             else
-                std::cerr << std::format(
+                std::clog << std::format(
                     R"({{"role":"Subscriber","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
                     "\n",
                     domain_id, participant_name, topic_name

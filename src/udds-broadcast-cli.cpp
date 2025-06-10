@@ -51,7 +51,7 @@ int main(const int argc, const char *const argv[]) {
         | std::ranges::to<std::vector>();
 
     if (parse_args(args).development_mode)
-        std::cerr << std::format(
+        std::clog << std::format(
             "program: {}\n"
             "robot_id: {}\n"
             "fastdds_domain: {}\n"
@@ -75,10 +75,10 @@ int main(const int argc, const char *const argv[]) {
         }
     );
     if (parse_args(args).development_mode)
-        std::cerr << "Start initializing broadcast server...\n";
+        std::clog << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
     if (parse_args(args).development_mode)
-        std::cerr << "Broadcast server initialized.\n";
+        std::clog << "Broadcast server initialized.\n";
 
     while (true) {
         std::string fn;
@@ -131,7 +131,7 @@ int main(const int argc, const char *const argv[]) {
             }
         } else if (fn == "send") {
             if (parse_args(args).development_mode)
-                std::cerr << "will send...\n";
+                std::clog << "will send...\n";
 
             auto message = UddsJsonProto{};
             for (auto _ : std::views::iota(0, /* number of fields: */ 4)) {

@@ -140,14 +140,14 @@ namespace shynur::udds {
             []() -> std::decay_t<decltype(this->to_cli)> {
                 int fd[2];
                 ::pipe(fd);
-                std::cerr << "to_cli: " << fd[0] << " <- " << fd[1] << '\n';
+                std::clog << "to_cli: " << fd[0] << " <- " << fd[1] << '\n';
                 return {fd[0], fd[1]};
             }()
         }, from_cli{
             []() -> std::decay_t<decltype(this->from_cli)> {
                 int fd[2];
                 ::pipe(fd);
-                std::cerr << "from_cli: " << fd[0] << " <- " << fd[1] << '\n';
+                std::clog << "from_cli: " << fd[0] << " <- " << fd[1] << '\n';
                 return {fd[0], fd[1]};
             }()
         }, cli_pid{
@@ -206,11 +206,11 @@ namespace shynur::udds {
                     };
                 }
 
-                std::cerr << "创建成功, server PID: "s + std::to_string(cli_pid) + '\n';
+                std::clog << "创建成功, server PID: "s + std::to_string(cli_pid) + '\n';
                 return cli_pid;
             }()
         }, cli_io{this->to_cli[1], this->from_cli[0]} {
-            std::cerr << "Client 创建完成!\n";
+            std::clog << "Client 创建完成!\n";
         }
 
         ~Broadcast_Client() {
@@ -218,7 +218,7 @@ namespace shynur::udds {
 
             ::kill(this->cli_pid, SIGINT);
             ::waitpid(this->cli_pid, nullptr, 0);
-            std::cerr << "Udds Server 已经跟随 Client 被关闭.\n";
+            std::clog << "Udds Server 已经跟随 Client 被关闭.\n";
         }
 
         /**
@@ -242,7 +242,7 @@ namespace shynur::udds {
             this->cli_io << "received_from.keys" << std::endl;
             std::size_t num_cars;
             this->cli_io >> num_cars;
-            std::cerr << "num_cars=" << num_cars << '\n';
+            std::clog << "num_cars=" << num_cars << '\n';
 
             auto robots = std::vector<std::string>{};
             for (auto i = 0u; i != num_cars; ++i) {
