@@ -15,30 +15,39 @@
 #include <unordered_map>
 #include "udds/broadcast.hpp"
 
-struct CmdLoopFlags {
-    static inline std::atomic_flag received_sigint = ATOMIC_FLAG_INIT;
-
-    CmdLoopFlags() {
-        set_sigint_handler();
-    }
-    static void set_sigint_handler() {
-        std::signal(
-            SIGINT,
-            [](int) static {
-                received_sigint.test_and_set();
-            }
-        );
-    }
-    static auto check() {
-        if (received_sigint.test()) {
-            std::cerr << std::format(
-                "\n*** [{}] Interrupt\n",
-                __FILE__
+struct {
+    static struct Flags {
+        static std::atomic_flag inline received_sigint = ATOMIC_FLAG_INIT;
+        Flags() {
+            std::signal(
+                SIGINT,
+                [](int) static {
+                    Flags::received_sigint.test_and_set();
+                }
             );
-            std::exit(130);
         }
+        static auto check() {
+            if (received_sigint.test()) {
+                std::cerr << std::format(
+                    "\n*** [{}] Interrupt\n",
+                    __FILE__
+                );
+                std::exit(130);
+            }
+        }
+    } flags;
+
+    auto& operator>>(auto&& s) {
+        std::cin >> std::forward<decltype(s)>(s);
+        std::decay_t<decltype(*this)>::flags.check();
+        return *this;
     }
-};
+    friend auto& getline(auto&& in, auto& s) {
+        std::getline(std::cin, s);
+        std::decay_t<decltype(*this)>::flags.check();
+        return in;
+    }
+} cin_with_check;
 
 auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) {
     struct {
@@ -98,14 +107,12 @@ int main(const int argc, const char *const argv[]) {
         std::clog << "Broadcast server initialized.\n";
 
     while (true) {
-        quit.check();
-
         std::string fn;
-        std::cin >> fn;
+        cin_with_check >> fn;
 
         if (fn == "received_from.contains") {
             std::string robot_id;
-            std::cin >> robot_id;  // 假设 robot_id 中没有空白字符.
+            cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
 
             std::cout << (
                 shynur::udds::broadcast::received_from.contains(robot_id)
@@ -113,7 +120,7 @@ int main(const int argc, const char *const argv[]) {
             ) << std::endl;
         } else if (fn == "received_from.operator[]") {
             std::string robot_id;
-            std::cin >> robot_id;  // 假设 robot_id 中没有空白字符.
+            cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
 
             const auto message = shynur::udds::broadcast::received_from[robot_id];
 
@@ -155,18 +162,20 @@ int main(const int argc, const char *const argv[]) {
             auto message = UddsJsonProto{};
             for (auto _ : std::views::iota(0, /* number of fields: */ 4)) {
                 std::string field_name;
-                std::cin >> field_name;
+                cin_with_check >> field_name;
+
                 if (field_name == "x")
-                    std::cin >> message.x();
+                    cin_with_check >> message.x();
                 else if (field_name == "y")
-                    std::cin >> message.y();
+                    cin_with_check >> message.y();
                 else if (field_name == "theta")
-                    std::cin >> message.theta();
+                    cin_with_check >> message.theta();
                 else if (field_name == "json") {
                     std::string json;
                     for (
                         std::string line;
-                        std::getline(std::cin, line), line != parse_args(args).end_of_json;
+                        getline(cin_with_check, line),
+                        line != parse_args(args).end_of_json;
                     )
                         json += line + '\n';
                     message.json() = std::move(json);
@@ -179,7 +188,7 @@ int main(const int argc, const char *const argv[]) {
             shynur::udds::broadcast::send(message);
         } else if (fn == "clock_offset_of.ns") {
             std::string robot_id;
-            std::cin >> robot_id;  // 假设 robot_id 中没有空白字符.
+            cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
 
             std::cout << shynur::udds::broadcast::clock_offset_of.ns(robot_id)
                       << std::endl;
