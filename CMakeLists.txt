@@ -30,39 +30,50 @@ add_compile_options(
     -Wpedantic -Wall -W
 )
 
-add_compile_options(
-    "$<$<CONFIG:Debug>:-O0>" "$<$<CONFIG:Debug>:-g3>"
-    "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-types>"
+add_compile_options("$<$<CONFIG:Debug>:-O0>" "$<$<CONFIG:Debug>:-g3>"
     "$<$<CONFIG:Debug>:-ggdb>"
-    "$<$<CONFIG:Debug>:-gcodeview>"
+    "$<$<CONFIG:Debug>:-gfull>"
     "$<$<CONFIG:Debug>:-gdwarf>"
+    "$<$<CONFIG:Debug>:-gdwarf-5>"
+    "$<$<CONFIG:Debug>:-gdwarf32>"
+    "$<$<CONFIG:Debug>:-gdwarf64>"
+    "$<$<CONFIG:Debug>:-gcodeview>"
+    "$<$<CONFIG:Debug>:-gpubnames>"
+    "$<$<CONFIG:Debug>:-gcolumn-info>"
+    "$<$<CONFIG:Debug>:-ggnu-pubnames>"
+    "$<$<CONFIG:Debug>:-gno-strict-dwarf>"
+    "$<$<CONFIG:Debug>:-grecord-gcc-switches>"
+    "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-types>"
+    "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-symbols>"
 )
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(
-        "$<$<CONFIG:Debug>:-gdwarf-5>"
-        "$<$<CONFIG:Debug>:-gbtf>" "$<$<CONFIG:Debug>:-gno-prune-btf>"
+        "$<$<CONFIG:Debug>:-gbtf>"
         "$<$<CONFIG:Debug>:-gctf>"
         "$<$<CONFIG:Debug>:-gvms>"
-        "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-symbol>"
-        "$<$<CONFIG:Debug>:-femit-class-debug-always>"
-        "$<$<CONFIG:Debug>:-fno-merge-debug-strings>"
         "$<$<CONFIG:Debug>:-fvar-tracking>"
-        "$<$<CONFIG:Debug>:-fvar-tracking-assignments>"
-        "$<$<CONFIG:Debug>:-gdwarf32>" "$<$<CONFIG:Debug>:-gdwarf64>"
+        "$<$<CONFIG:Debug>:-gno-prune-btf>"
         "$<$<CONFIG:Debug>:-gdescribe-dies>"
-        "$<$<CONFIG:Debug>:-gpubnames>"
-        "$<$<CONFIG:Debug>:-ggnu-pubnames>"
-        "$<$<CONFIG:Debug>:-fdebug-types-section>"
-        "$<$<CONFIG:Debug>:-gno-strict-dwarf>"
-        "$<$<CONFIG:Debug>:-gcolumn-info>"
-        "$<$<CONFIG:Debug>:-gstatement-frontiers>"
         "$<$<CONFIG:Debug>:-ginline-points>"
+        "$<$<CONFIG:Debug>:-fdebug-types-section>"
+        "$<$<CONFIG:Debug>:-gstatement-frontiers>"
+        "$<$<CONFIG:Debug>:-fno-merge-debug-strings>"
+        "$<$<CONFIG:Debug>:-femit-class-debug-always>"
+        "$<$<CONFIG:Debug>:-fvar-tracking-assignments>"
     )
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(
-        "$<$<CONFIG:Debug>:-fstandalone-debug>"
+        "$<$<CONFIG:Debug>:-gdbx>"
+        "$<$<CONFIG:Debug>:-gsce>"
+        "$<$<CONFIG:Debug>:-lldb>"
+        "$<$<CONFIG:Debug>:-gmodules>"
         "$<$<CONFIG:Debug>:-fdebug-macro>"
-        "$<$<CONFIG:Debug>:-lldb>" "$<$<CONFIG:Debug>:-gsce>" "$<$<CONFIG:Debug>:-gdbx>"
+        "$<$<CONFIG:Debug>:-gembed-source>"
+        "$<$<CONFIG:Debug>:-gdwarf-aranges>"
+        "$<$<CONFIG:Debug>:-gtemplate-alias>"
+        "$<$<CONFIG:Debug>:-fstandalone-debug>"
+        "$<$<CONFIG:Debug>:-ginline-line-tables>"
+        "$<$<CONFIG:Debug>:-gno-omit-unreferenced-methods>"
     )
 endif()
 
