@@ -28,7 +28,7 @@ fi
 cd `dirname $0`/../bin
 if [ -f udds-broadcast-cli.d/udds-broadcast-cli ]; then
     rm -rf /mnt/shared-thru-vbox/udds-broadcast-cli.d
-    cp -r bin/udds-broadcast-cli.d /mnt/shared-thru-vbox/
+    cp -r udds-broadcast-cli.d /mnt/shared-thru-vbox/
 else
     echo '没有编译 udds-broadcast-cli' 1>&2
     exit 1
