@@ -1,5 +1,4 @@
 // 该文件编译后放到 PATH 目录中.
-#include <atomic>
 #include <cctype>
 #include <format>
 #include <ranges>
@@ -10,44 +9,42 @@
 #include <cstdlib>
 #include <cstdint>
 #include <iostream>
+#include <unistd.h>  // close, STDIN_FILENO
 #include <algorithm>
 #include <string_view>
 #include <unordered_map>
 #include "udds/broadcast.hpp"
 
-struct Cin_With_Check {
-    static struct Flags {
-        static std::atomic_flag inline received_sigint = ATOMIC_FLAG_INIT;
-        Flags() {
-            std::signal(
-                SIGINT,
-                [](int) static {
-                    Flags::received_sigint.test_and_set();
-                }
+struct {
+    static void init() {
+        static auto sigint_handler_set = std::signal(
+            SIGINT,
+            [](int) static {::close(STDIN_FILENO);}
+        );
+    }
+    static auto check() {
+        if (!std::cin) {
+            std::cerr << std::format(
+                "\n*** [{}] Interrupt\n",
+                __FILE__
             );
+            std::exit(0);
         }
-        static auto check() {
-            if (received_sigint.test()) {
-                std::cerr << std::format(
-                    "\n*** [{}] Interrupt\n",
-                    __FILE__
-                );
-                std::exit(130);
-            }
-        }
-    } flags;
+    }
 
     auto& operator>>(auto&& s) {
+        init();
         std::cin >> std::forward<decltype(s)>(s);
-        std::decay_t<decltype(*this)>::flags.check();
+        check();
         return *this;
     }
     friend auto& getline(auto&& in, auto& s) {
+        init();
         std::getline(std::cin, s);
-        flags.check();
+        check();
         return in;
     }
-} cin_with_check;  // 本质上是一个 singleton, 因为它没有 data member.
+} cin_with_check;  // singleton
 
 auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) {
     struct {
@@ -101,7 +98,8 @@ int main(const int argc, const char *const argv[]) {
 
     if (parse_args(args).development_mode)
         std::clog << "Start initializing broadcast server...\n";
-    shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
+    cin_with_check.init(),
+        shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
     if (parse_args(args).development_mode)
         std::clog << "Broadcast server initialized.\n";
 
