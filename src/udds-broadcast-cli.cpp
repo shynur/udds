@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include "udds/broadcast.hpp"
 
-struct {
+struct Cin_With_Check {
     static struct Flags {
         static std::atomic_flag inline received_sigint = ATOMIC_FLAG_INIT;
         Flags() {
@@ -44,10 +44,10 @@ struct {
     }
     friend auto& getline(auto&& in, auto& s) {
         std::getline(std::cin, s);
-        std::decay_t<decltype(*this)>::flags.check();
+        flags.check();
         return in;
     }
-} cin_with_check;
+} cin_with_check;  // 本质上是一个 singleton, 因为它没有 data member.
 
 auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) {
     struct {
