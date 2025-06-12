@@ -101,7 +101,6 @@ int main(const int argc, const char *const argv[]) {
 
     if (parse_args(args).development_mode)
         std::clog << "Start initializing broadcast server...\n";
-    CmdLoopFlags quit;
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
     if (parse_args(args).development_mode)
         std::clog << "Broadcast server initialized.\n";
