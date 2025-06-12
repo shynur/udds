@@ -32,25 +32,15 @@ add_compile_options(
 
 add_compile_options("$<$<CONFIG:Debug>:-O0>" "$<$<CONFIG:Debug>:-g3>"
     "$<$<CONFIG:Debug>:-ggdb>"
-    "$<$<CONFIG:Debug>:-gfull>"
-    "$<$<CONFIG:Debug>:-gdwarf>"
-    "$<$<CONFIG:Debug>:-gdwarf-5>"
-    "$<$<CONFIG:Debug>:-gdwarf32>"
-    "$<$<CONFIG:Debug>:-gdwarf64>"
-    "$<$<CONFIG:Debug>:-gcodeview>"
     "$<$<CONFIG:Debug>:-gpubnames>"
     "$<$<CONFIG:Debug>:-gcolumn-info>"
     "$<$<CONFIG:Debug>:-ggnu-pubnames>"
     "$<$<CONFIG:Debug>:-gno-strict-dwarf>"
     "$<$<CONFIG:Debug>:-grecord-gcc-switches>"
     "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-types>"
-    "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-symbols>"
 )
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options(
-        "$<$<CONFIG:Debug>:-gbtf>"
-        "$<$<CONFIG:Debug>:-gctf>"
-        "$<$<CONFIG:Debug>:-gvms>"
         "$<$<CONFIG:Debug>:-fvar-tracking>"
         "$<$<CONFIG:Debug>:-gno-prune-btf>"
         "$<$<CONFIG:Debug>:-gdescribe-dies>"
@@ -60,16 +50,17 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         "$<$<CONFIG:Debug>:-fno-merge-debug-strings>"
         "$<$<CONFIG:Debug>:-femit-class-debug-always>"
         "$<$<CONFIG:Debug>:-fvar-tracking-assignments>"
+        "$<$<CONFIG:Debug>:-fno-eliminate-unused-debug-symbols>"
     )
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(
         "$<$<CONFIG:Debug>:-gdbx>"
         "$<$<CONFIG:Debug>:-gsce>"
-        "$<$<CONFIG:Debug>:-lldb>"
+        "$<$<CONFIG:Debug>:-gfull>"
+        "$<$<CONFIG:Debug>:-glldb>"
         "$<$<CONFIG:Debug>:-gmodules>"
         "$<$<CONFIG:Debug>:-fdebug-macro>"
         "$<$<CONFIG:Debug>:-gembed-source>"
-        "$<$<CONFIG:Debug>:-gdwarf-aranges>"
         "$<$<CONFIG:Debug>:-gtemplate-alias>"
         "$<$<CONFIG:Debug>:-fstandalone-debug>"
         "$<$<CONFIG:Debug>:-ginline-line-tables>"

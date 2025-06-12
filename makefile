@@ -22,7 +22,7 @@ cmake-build/Makefile: CMakeLists.txt $(wildcard protos/*.idl)
 	for f_idl in *.idl; do  \
 		fastddsgen $$f_idl;  \
 	done
-	mkdir -p cmake-build; cd cmake-build; cmake ..
+	mkdir -p cmake-build; cd cmake-build; cmake -D'CMAKE_BUILD_TYPE=Debug' ..
 
 .PHONY: clean
 clean:
