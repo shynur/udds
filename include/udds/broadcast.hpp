@@ -1,6 +1,5 @@
 /* source code: <https://github.com/shynur/udds> */
 #pragma once
-#include "udds.hpp"
 #include <chrono>
 #include <format>
 #include <memory>
@@ -21,6 +20,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include "udds.hpp"
 #if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
     #include "UddsJsonProto.hpp"
     #include "UddsJsonProtoPubSubTypes.hpp"

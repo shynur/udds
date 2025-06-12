@@ -1,18 +1,44 @@
 // 该文件编译后放到 PATH 目录中.
-#include "udds/broadcast.hpp"
-#include <string_view>
-#include <vector>
-#include <unordered_map>
-#include <ranges>
+#include <atomic>
 #include <cctype>
-#include <iostream>
 #include <format>
-#include <csignal>
-#include <cassert>
-#include <algorithm>
+#include <ranges>
 #include <string>
+#include <vector>
+#include <cassert>
+#include <csignal>
 #include <cstdlib>
 #include <cstdint>
+#include <iostream>
+#include <algorithm>
+#include <string_view>
+#include <unordered_map>
+#include "udds/broadcast.hpp"
+
+struct CmdLoopFlags {
+    static inline std::atomic_flag received_sigint = ATOMIC_FLAG_INIT;
+
+    CmdLoopFlags() {
+        set_sigint_handler();
+    }
+    static void set_sigint_handler() {
+        std::signal(
+            SIGINT,
+            [](int) static {
+                received_sigint.test_and_set();
+            }
+        );
+    }
+    static auto check() {
+        if (received_sigint.test()) {
+            std::cerr << std::format(
+                "\n*** [{}] Interrupt\n",
+                __FILE__
+            );
+            std::exit(130);
+        }
+    }
+};
 
 auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) {
     struct {
@@ -64,23 +90,16 @@ int main(const int argc, const char *const argv[]) {
             parse_args(args).end_of_json
         );
 
-    std::signal(
-        SIGINT,
-        [](int) {
-            std::cerr << std::format(
-                "\n*** [{}] Interrupt\n",
-                __FILE__
-            );
-            std::exit(0);
-        }
-    );
     if (parse_args(args).development_mode)
         std::clog << "Start initializing broadcast server...\n";
+    CmdLoopFlags quit;
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
     if (parse_args(args).development_mode)
         std::clog << "Broadcast server initialized.\n";
 
     while (true) {
+        quit.check();
+
         std::string fn;
         std::cin >> fn;
 
