@@ -20,7 +20,7 @@ struct {
         static auto sigint_handler_set [[maybe_unused]]
           = std::signal(
             SIGINT,
-            [](int) static {::close(STDIN_FILENO);}
+            [](int) {::close(STDIN_FILENO);}
         );
     }
     static auto check() {
