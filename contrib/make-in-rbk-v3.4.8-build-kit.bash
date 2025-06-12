@@ -15,7 +15,7 @@ CFLAGS= CXXFLAGS= make
 make install
 
 mkdir -p bin
-clang++-6.0 -std=c++14 -O0 -g3 -ggdb -dlldb -I./include  \
+clang++-6.0 -std=c++14 -O0 -g3 -ggdb -glldb -I./include  \
     -static-libgcc -static-libstdc++  \
     src/easily-send-receive.cpp  \
     -o bin/easily-send-receive

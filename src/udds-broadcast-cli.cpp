@@ -17,7 +17,8 @@
 
 struct {
     static void init() {
-        static auto sigint_handler_set = std::signal(
+        static auto sigint_handler_set [[maybe_unused]]
+          = std::signal(
             SIGINT,
             [](int) static {::close(STDIN_FILENO);}
         );
