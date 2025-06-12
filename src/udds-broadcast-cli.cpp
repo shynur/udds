@@ -29,7 +29,7 @@ struct {
                 "\n*** [{}] Interrupt\n",
                 __FILE__
             );
-            std::exit(0);
+            std::exit(130);
         }
     }
 

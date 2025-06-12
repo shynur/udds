@@ -3,11 +3,13 @@
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 #include <cassert>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
+#include <errno.h>
 #include <istream>
 #include <ostream>
 #include <utility>
@@ -162,13 +164,16 @@ namespace shynur::udds {
                         )
                     );
 
+                std::clog << "Forking...\n";
                 const auto cli_pid = ::fork();
+                std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n';
 
                 if (cli_pid == 0) {
                     ::close(this->to_cli[1]), ::close(this->from_cli[0]);
                     ::dup2(  this->to_cli[0], 0), ::close(  this->to_cli[0]);
                     ::dup2(this->from_cli[1], 1), ::close(this->from_cli[1]);
 
+                    std::clog << "exec "s + cli_program + " ...\n";
                     ::execvp(
                         cli_program,
                         [options=options]() mutable {
@@ -194,6 +199,7 @@ namespace shynur::udds {
                             return argv;
                         }().data()
                     );
+                    std::cerr << "Failed to exec `"s + cli_program + "'!!!\n";
                     std::_Exit(EXIT_FAILURE);
                 }
 
@@ -202,11 +208,21 @@ namespace shynur::udds {
                 if (cli_pid == -1) {
                     ::close(this->to_cli[1]), ::close(this->from_cli[0]);
                     throw std::runtime_error{
-                        "Failed to create sub-process " + std::string{cli_program}
+                        "Failed to fork sub-process for "s + cli_program
                     };
                 }
 
-                std::clog << "创建成功, server PID: "s + std::to_string(cli_pid) + '\n';
+                // 子进程可能会退出, 等待这么久应该足够判断它是不是真的退出了.
+                std::this_thread::sleep_for(4ms);
+                if (
+                    int cli_stat;
+                    ::waitpid(this->cli_pid, &cli_stat, WNOHANG)
+                    && WIFEXITED(cli_stat) && WEXITSTATUS(cli_stat) == EXIT_FAILURE
+                )
+                    throw std::runtime_error{
+                        "Failed to exec `"s + cli_program + "'!!!"
+                    };
+
                 return cli_pid;
             }()
         }, cli_io{this->to_cli[1], this->from_cli[0]} {
