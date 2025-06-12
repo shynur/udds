@@ -29,6 +29,7 @@ file(GLOB UddsExample_SOURCES_CXX "protos/*.cxx")
 add_compile_options(
     -Wpedantic -Wall -W
 )
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options("$<$<CONFIG:Debug>:-O0>" "$<$<CONFIG:Debug>:-g3>"
     "$<$<CONFIG:Debug>:-ggdb>"
