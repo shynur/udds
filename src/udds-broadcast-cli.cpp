@@ -22,6 +22,8 @@ struct {
             SIGINT,
             [](int) {::close(STDIN_FILENO);}
         );
+        static auto cstdio_desynced [[maybe_unused]]
+          = std::ios_base::sync_with_stdio(false);
     }
     static auto check() {
         if (!std::cin) {
@@ -99,8 +101,7 @@ int main(const int argc, const char *const argv[]) {
 
     if (parse_args(args).development_mode)
         std::clog << "Start initializing broadcast server...\n";
-    cin_with_check.init(),
-        shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
+    shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
     if (parse_args(args).development_mode)
         std::clog << "Broadcast server initialized.\n";
 

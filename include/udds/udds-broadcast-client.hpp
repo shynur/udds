@@ -84,7 +84,9 @@ namespace shynur::udds {
                 _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{from_cli, std::ios::in},
                 _tmp_var_within_init
 #endif
-            } {}
+            } {
+                this->from_cli.second.tie(&this->to_cli.second);
+            }
 
 #if __cplusplus >= 202002L
             auto operator<<(auto&& i)
@@ -98,8 +100,7 @@ namespace shynur::udds {
             }
 
             auto& operator<<(
-                std::decay_t<decltype(Broadcast_Server_IO::to_cli)::second_type>&
-                (* endl_like)(std::decay_t<decltype(Broadcast_Server_IO::to_cli)::second_type>&)
+                std::basic_ostream<char>& (*endl_like)(std::basic_ostream<char>&)
             ) {
                 this->to_cli.second << endl_like;
                 return *this;
@@ -255,7 +256,7 @@ namespace shynur::udds {
          *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
          */
         auto received_from() {
-            this->cli_io << "received_from.keys" << std::endl;
+            this->cli_io << "received_from.keys" << ' ';
             std::size_t num_cars;
             this->cli_io >> num_cars;
             std::clog << "num_cars=" << num_cars << '\n';
@@ -284,8 +285,8 @@ namespace shynur::udds {
                         if (this->current_message.robot_id == *this->probot)
                             return {*this->probot, this->current_message};
 
-                        this->client.cli_io << "received_from.operator[]\n"
-                                            << *this->probot << std::endl;
+                        this->client.cli_io << "received_from.operator[] "
+                                            << *this->probot << ' ';
 
                         for (auto _ : std::array<char, /* UddsJson 字段数量: */ 7>{}) {
                             std::string field_name;
