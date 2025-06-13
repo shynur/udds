@@ -115,7 +115,7 @@ int main(const int argc, const char *const argv[]) {
             std::cout << (
                 shynur::udds::broadcast::received_from.contains(robot_id)
                 ? "true" : "false"
-            ) << std::endl;
+            ) << '\n';
         } else if (fn == "received_from.operator[]") {
             std::string robot_id;
             cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
@@ -129,7 +129,8 @@ int main(const int argc, const char *const argv[]) {
                 "x {}\n"
                 "y {}\n"
                 "theta {}\n"
-                "json {}\n{}\n",
+                "json {}\n"
+                "{}\n",
                 message->send_timestamp_ns(),
                 message->received_timestamp_ns(),
                 message->robot_id(),
@@ -138,10 +139,10 @@ int main(const int argc, const char *const argv[]) {
                 message->theta(),
                 message->json(),
                 parse_args(args).end_of_json
-            ) << std::endl;
+            ) << '\n';
         } else if (fn == "received_from.keys") {
             std::cout << std::size(shynur::udds::broadcast::received_from)
-                      << std::endl;
+                      << '\n';
 
             for (const auto& robot_id : shynur::udds::broadcast::received_from.keys()) {
                 assert(
@@ -151,8 +152,9 @@ int main(const int argc, const char *const argv[]) {
                     )
                     && "CLI 无法处理含有 空白字符 的小车名"
                 );
-                std::cout << *robot_id << std::endl;
+                std::cout << *robot_id << ' ';
             }
+            std::cout << '\n';
         } else if (fn == "send") {
             if (parse_args(args).development_mode)
                 std::clog << "will send...\n";
@@ -189,7 +191,7 @@ int main(const int argc, const char *const argv[]) {
             cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
 
             std::cout << shynur::udds::broadcast::clock_offset_of.ns(robot_id)
-                      << std::endl;
+                      << '\n';
         } else
             throw std::runtime_error{
                 std::format("未知指令: {}", fn)
