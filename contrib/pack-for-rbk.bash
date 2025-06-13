@@ -26,10 +26,17 @@ fi
 )
 
 cd `dirname $0`/../bin
+if [ -f easily-send-receive ]; then
+    rm -f /mnt/shared-thru-vbox/easily-send-receive
+    cp easily-send-receive /mnt/shared-thru-vbox/
+else
+    echo '没有编译 easily-send-receive' >&2
+    exit 1
+fi
 if [ -f udds-broadcast-cli.d/udds-broadcast-cli ]; then
     rm -rf /mnt/shared-thru-vbox/udds-broadcast-cli.d
     cp -r udds-broadcast-cli.d /mnt/shared-thru-vbox/
 else
-    echo '没有编译 udds-broadcast-cli' 1>&2
+    echo '没有编译 udds-broadcast-cli' >&2
     exit 1
 fi
