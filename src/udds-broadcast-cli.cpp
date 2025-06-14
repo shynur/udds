@@ -12,26 +12,114 @@
 #include <unistd.h>  // close, STDIN_FILENO
 #include <algorithm>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include "udds/broadcast.hpp"
 
+using namespace std::literals;
+
+struct ArgParser {
+    static const auto& operator()(
+        const int argc = 0, const char *const argv[] = nullptr
+    ) {
+        static const auto options = [&] {
+            class {
+                const std::string_view default_end_of_json = "shynur.udds.json.end";
+              public:
+                std::string_view program;
+                std::string_view robot_id;
+                std::uint8_t fastdds_domain;
+                bool development_mode = false;
+                std::string_view end_of_json = default_end_of_json;
+
+                operator std::string() const {
+                    auto cmdline = std::format(
+                        "{} --robot_id={} --fastdds_fomain={}",
+                        program, robot_id, fastdds_domain
+                    );
+                    if (development_mode)
+                        cmdline += " --development_mode";
+                    if (end_of_json != default_end_of_json)
+                        cmdline += std::format(" --end_of_json={}", end_of_json);
+                    return cmdline;
+                }
+            } options;
+
+            const auto args
+              = std::ranges::subrange{argv, argv + argc}
+                | std::views::transform(
+                    [](const auto arg) -> std::string_view {return arg;}
+                )
+                | std::ranges::to<std::vector>();
+
+            options.program = args[0];
+            for (const auto arg : args | std::views::drop(1))
+                if (const auto param = "--robot_id="sv; arg.starts_with(param))
+                    options.robot_id = arg.substr(param.length());
+                else if (const auto param = "--fastdds_domain="sv; arg.starts_with(param))
+                    options.fastdds_domain = std::stoul(std::string{arg.substr(param.length())});
+                else if (arg == "--development_mode"sv)
+                    options.development_mode = true;
+                else if (const auto param = "--end_of_json="sv; arg.starts_with(param))
+                    options.end_of_json = arg.substr(param.length());
+                else
+                    throw std::runtime_error{
+                        std::format("未知参数: {}", arg)
+                    };
+
+            if (options.development_mode)
+                std::clog << std::format(
+                    "program: {}\n"
+                    "robot_id: {}\n"
+                    "fastdds_domain: {}\n"
+                    "development_mode: {}\n"
+                    "end_of_json: {}\n",
+                    options.program,
+                    options.robot_id,
+                    options.fastdds_domain,
+                    options.development_mode,
+                    options.end_of_json
+                );
+
+            return options;
+        }();
+        return options;
+    }
+} args_parser;
+
 struct {
+    static volatile inline std::sig_atomic_t no_received_signal = 0;
     static void init() {
         static auto sigint_handler_set [[maybe_unused]]
           = std::signal(
             SIGINT,
-            [](int) {::close(STDIN_FILENO);}
+            [](int) {
+                no_received_signal = SIGINT;
+                ::close(STDIN_FILENO);
+            }
         );
         static auto cstdio_desynced [[maybe_unused]]
           = std::ios_base::sync_with_stdio(false);
     }
     static auto check() {
         if (!std::cin) {
+            const auto msg = std::format(
+                "{}: *** [{}]",
+
+            );
+
+            if (no_received_signal == SIGINT) {
+                std::cerr << std::format(
+                    "\n*** [{}] Interrupt\n",
+                    __FILE__
+                );
+                std::exit(130);
+            }
             std::cerr << std::format(
-                "\n*** [{}] Interrupt\n",
+                "\n*** [{}] Error reading input\n",
                 __FILE__
             );
-            std::exit(130);
+            std::exit(1);
         }
     }
 
@@ -49,57 +137,10 @@ struct {
     }
 } cin_with_check;  // singleton
 
-auto parse_args [[gnu::unsequenced]] (const std::vector<std::string_view> args) {
-    struct {
-        std::string_view program;
-        std::string_view robot_id;
-        std::uint8_t fastdds_domain;
-        bool development_mode = false;
-        std::string_view end_of_json = "shynur.udds.json.end";
-    } options;
-
-    options.program = args[0];
-
-    for (const auto arg : args | std::views::drop(1))
-        if (const auto param = "--robot_id="sv; arg.starts_with(param))
-            options.robot_id = arg.substr(param.length());
-        else if (const auto param = "--fastdds_domain="sv; arg.starts_with(param))
-            options.fastdds_domain = std::stoul(std::string{arg.substr(param.length())});
-        else if (arg == "--development_mode"sv)
-            options.development_mode = true;
-        else if (const auto param = "--end_of_json="sv; arg.starts_with(param))
-            options.end_of_json = arg.substr(param.length());
-        else
-            throw std::runtime_error{
-                std::format("未知参数: {}", arg)
-            };
-
-    return options;
-}
-
 int main(const int argc, const char *const argv[]) {
-    const auto args
-        = std::ranges::subrange{argv, argv + argc}
-        | std::views::transform(
-            [](const auto arg) -> std::string_view {return arg;}
-        )
-        | std::ranges::to<std::vector>();
+    ArgParser::operator()(argc, argv);
 
-    if (parse_args(args).development_mode)
-        std::clog << std::format(
-            "program: {}\n"
-            "robot_id: {}\n"
-            "fastdds_domain: {}\n"
-            "development_mode: {}\n"
-            "end_of_json: {}\n",
-            parse_args(args).program,
-            parse_args(args).robot_id,
-            parse_args(args).fastdds_domain,
-            parse_args(args).development_mode,
-            parse_args(args).end_of_json
-        );
-
-    if (parse_args(args).development_mode)
+    if (ArgParser::get_options().development_mode)
         std::clog << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
     if (parse_args(args).development_mode)
