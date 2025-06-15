@@ -64,7 +64,13 @@ struct {
                     options.development_mode = true;
                 else if (const auto param = "--end_of_json="sv; arg.starts_with(param))
                     options.end_of_json = arg.substr(param.length());
-                else
+                else if (arg == "-h" || arg == "--help") {
+                    constexpr unsigned char script[]{
+                        #embed "udds-broadcast-cli.help.py"  \
+                            suffix(,)
+                        0
+                    };
+                } else
                     throw std::runtime_error{
                         std::format("未知参数: {}", arg)
                     };
