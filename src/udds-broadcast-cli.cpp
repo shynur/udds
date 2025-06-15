@@ -8,8 +8,9 @@
 #include <csignal>
 #include <cstdlib>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
-#include <unistd.h>  // close, STDIN_FILENO
+#include <unistd.h>  // pipe, write, close, STDIN_FILENO
 #include <algorithm>
 #include <string_view>
 #include <type_traits>
@@ -66,10 +67,21 @@ struct {
                     options.end_of_json = arg.substr(param.length());
                 else if (arg == "-h" || arg == "--help") {
                     constexpr unsigned char script[]{
-                        #embed "udds-broadcast-cli.help.py"  \
+                        #embed "./udds-broadcast-cli.help.py"  \
                             suffix(,)
                         0
                     };
+                    int rw[2];
+                    ::pipe(rw);
+                    ::write(rw[1], script, std::strlen((const char *)script));
+                    ::close(rw[1]);
+                    std::system(
+                        std::format(
+                            "bash -c 'python3 /dev/fd/{} -h'",
+                            rw[0]
+                        ).c_str()
+                    );
+                    std::exit(0);
                 } else
                     throw std::runtime_error{
                         std::format("未知参数: {}", arg)

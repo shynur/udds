@@ -9,6 +9,7 @@ assert len(sys.argv) > 1 and (
 )
 
 parser = argparse.ArgumentParser(
+    prog="udds-broadcast-cli",
     description="""
 同局域网或同主机內 DDS 广播服务.
 指令由用户输入, 查询结果通过标准输出打印.
