@@ -66,10 +66,14 @@ struct {
                 else if (const auto param = "--end_of_json="sv; arg.starts_with(param))
                     options.end_of_json = arg.substr(param.length());
                 else if (arg == "-h" || arg == "--help") {
-                    constexpr unsigned char script[]{
-                        #embed "./udds-broadcast-cli.help.py"  \
-                            suffix(,)
-                        0
+                    constexpr unsigned char script[] = {
+                        #ifdef __cpp_pp_embed
+                            #embed "./udds-broadcast-cli.help.py"  \
+                                suffix(,)
+                            0
+                        #else
+                            R"(print("打印帮助信息的功能需要更高的 clang 版本支持."))"
+                        #endif
                     };
                     int rw[2];
                     ::pipe(rw);
@@ -116,7 +120,7 @@ struct cin_with_check_t {
         static auto sigint_handler_set [[maybe_unused]]
           = std::signal(
             SIGINT,
-            [] [[gnu::interrupt_handler]] (int) static {
+            [](int) {
                 no_received_signal = SIGINT;
                 ::close(STDIN_FILENO);
             }
@@ -163,7 +167,7 @@ int main(const int argc, const char *const argv[]) {
         std::clog << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{arg_parser.get_options().robot_id});
     if (arg_parser.get_options().development_mode)
-        std::clog << "Broadcast server initialized.\n";
+        std::clog << "Broadcast server initialized." << std::endl;
 
     while (true) {
         std::string fn;
