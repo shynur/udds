@@ -1,6 +1,6 @@
 #! /bin/bash
 
-if ! [ $USER = shynur ]; then
+if ! [ "`logname`" = shynur ]; then
     exit 1
 fi
 
