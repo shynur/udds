@@ -59,8 +59,10 @@ namespace shynur::udds {
                 std::basic_istream<char>
             > from_cli;
           public:
-            Broadcast_Server_IO(const int to_cli, const int from_cli)
-            : to_cli{
+            __attribute__((fd_arg_write(2), fd_arg_read(3)))
+            Broadcast_Server_IO(
+                const int to_cli, const int from_cli
+            ): to_cli{
 #if __cplusplus >= 201703L
                 [&, this] {
                     auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(to_cli, std::ios::out);

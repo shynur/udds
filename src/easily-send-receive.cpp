@@ -6,13 +6,11 @@
 int main(int, const char *const argv[2]) {
     shynur::udds::Broadcast_Client c{ /* Robot ID: */ argv[1], 1};
 
-    while (true) {
-        std::cout << "\n\n-----------------------------------------\n\n";
-
-        std::cout << "send or check?  ";
+    for (
         std::string do_what;
-        std::cin >> do_what;
-
+        std::cout << "send or check?  ", std::cin >> do_what;
+        std::cout << "\n\n-----------------------------------------\n\n"
+    ) {
         if (do_what == "send") {
             auto msg = shynur::udds::UddsJsonStruct{};
 

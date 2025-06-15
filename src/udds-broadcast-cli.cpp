@@ -18,23 +18,25 @@
 
 using namespace std::literals;
 
-struct ArgParser {
-    static const auto& operator()(
+struct {
+    static const auto& operator() [[gnu::nonnull_if_nonzero(2, 1)]] (
         const int argc = 0, const char *const argv[] = nullptr
     ) {
         static const auto options = [&] {
+            assert(argc >= 1);
+
             class {
                 const std::string_view default_end_of_json = "shynur.udds.json.end";
               public:
                 std::string_view program;
                 std::string_view robot_id;
-                std::uint8_t fastdds_domain;
+                std::uint8_t fastdds_domain = 1;
                 bool development_mode = false;
                 std::string_view end_of_json = default_end_of_json;
 
                 operator std::string() const {
                     auto cmdline = std::format(
-                        "{} --robot_id={} --fastdds_fomain={}",
+                        "'{}' --robot_id={} --fastdds_fomain={}",
                         program, robot_id, fastdds_domain
                     );
                     if (development_mode)
@@ -85,15 +87,18 @@ struct ArgParser {
         }();
         return options;
     }
-} args_parser;
+    static const auto& get_options() {
+        return operator()();
+    }
+} arg_parser;
 
-struct {
-    static volatile inline std::sig_atomic_t no_received_signal = 0;
+struct cin_with_check_t {
+    static volatile std::sig_atomic_t inline no_received_signal = 0;
     static void init() {
         static auto sigint_handler_set [[maybe_unused]]
           = std::signal(
             SIGINT,
-            [](int) {
+            [] [[gnu::interrupt_handler]] (int) static {
                 no_received_signal = SIGINT;
                 ::close(STDIN_FILENO);
             }
@@ -102,24 +107,20 @@ struct {
           = std::ios_base::sync_with_stdio(false);
     }
     static auto check() {
-        if (!std::cin) {
-            const auto msg = std::format(
-                "{}: *** [{}]",
-
-            );
-
+        if (!std::cin) [[unlikely]] {
             if (no_received_signal == SIGINT) {
                 std::cerr << std::format(
                     "\n*** [{}] Interrupt\n",
-                    __FILE__
+                    std::string(arg_parser.get_options())
                 );
                 std::exit(130);
             }
+
             std::cerr << std::format(
-                "\n*** [{}] Error reading input\n",
-                __FILE__
+                "\n*** [{}] EOF is read\n",
+                std::string(arg_parser.get_options())
             );
-            std::exit(1);
+            std::exit(0);
         }
     }
 
@@ -138,12 +139,12 @@ struct {
 } cin_with_check;  // singleton
 
 int main(const int argc, const char *const argv[]) {
-    ArgParser::operator()(argc, argv);
+    arg_parser(argc, argv);
 
-    if (ArgParser::get_options().development_mode)
+    if (arg_parser.get_options().development_mode)
         std::clog << "Start initializing broadcast server...\n";
-    shynur::udds::broadcast::init(std::string{parse_args(args).robot_id});
-    if (parse_args(args).development_mode)
+    shynur::udds::broadcast::init(std::string{arg_parser.get_options().robot_id});
+    if (arg_parser.get_options().development_mode)
         std::clog << "Broadcast server initialized.\n";
 
     while (true) {
@@ -180,7 +181,7 @@ int main(const int argc, const char *const argv[]) {
                 message->y(),
                 message->theta(),
                 message->json(),
-                parse_args(args).end_of_json
+                arg_parser.get_options().end_of_json
             ) << '\n';
         } else if (fn == "received_from.keys") {
             std::cout << std::size(shynur::udds::broadcast::received_from)
@@ -198,7 +199,7 @@ int main(const int argc, const char *const argv[]) {
             }
             std::cout << '\n';
         } else if (fn == "send") {
-            if (parse_args(args).development_mode)
+            if (arg_parser.get_options().development_mode)
                 std::clog << "will send...\n";
 
             auto message = UddsJsonProto{};
@@ -217,7 +218,7 @@ int main(const int argc, const char *const argv[]) {
                     for (
                         std::string line;
                         getline(cin_with_check, line),
-                        line != parse_args(args).end_of_json;
+                        line != arg_parser.get_options().end_of_json;
                     )
                         json += line + '\n';
                     message.json() = std::move(json);
