@@ -77,9 +77,9 @@ add_executable(send-receive
     src/send-receive.cpp
     ${UddsExample_SOURCES_CXX}
 )
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_features(send-receive PRIVATE cxx_std_23)  # latest C++ standard
-elseif()
+else()
     target_compile_features(send-receive PRIVATE cxx_std_26)
 endif()
 target_link_libraries(send-receive fastdds fastcdr tbb)
@@ -88,10 +88,10 @@ add_executable(udds-broadcast-cli
     src/udds-broadcast-cli.cpp
     ${UddsExample_SOURCES_CXX}
 )
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ standard
-elseif()
-    target_compile_features(udds-broadcast-cli PRIVATE cxx_std_26)  # latest C++ standard
+else()
+    target_compile_features(udds-broadcast-cli PRIVATE cxx_std_26)
 endif()
 target_link_libraries(udds-broadcast-cli fastdds fastcdr tbb)
 target_link_options(udds-broadcast-cli PRIVATE "-Wl,-rpath,$ORIGIN")
