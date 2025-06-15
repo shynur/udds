@@ -89,7 +89,7 @@ add_executable(udds-broadcast-cli
     ${UddsExample_SOURCES_CXX}
 )
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_features(udds-broadcast-cli PRIVATE cxx_std_23)  # latest C++ standard
+    target_compile_options(udds-broadcast-cli PRIVATE "-std=c++26")  # latest C++ standard
 else()
     target_compile_features(udds-broadcast-cli PRIVATE cxx_std_26)
 endif()

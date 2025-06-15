@@ -72,7 +72,7 @@ struct {
                                 suffix(,)
                             0
                         #else
-                            R"(print("打印帮助信息的功能需要更高的 clang 版本支持."))"
+                            R"(print("打印帮助信息的功能需要更新的 C++ 编译器编译."))"
                         #endif
                     };
                     int rw[2];
