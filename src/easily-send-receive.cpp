@@ -8,7 +8,7 @@ int main(int, const char *const argv[2]) {
 
     for (
         std::string do_what;
-        std::cout << "send or check?  ", std::cin >> do_what;
+        std::cout << "[send], send [N] characters, or [check]?  ", std::cin >> do_what;
         std::cout << "\n\n-----------------------------------------\n\n"
     ) {
         if (do_what == "send") {
@@ -25,5 +25,18 @@ int main(int, const char *const argv[2]) {
                           << "发送时间: " << msg.send_timestamp_ns << '\n'
                           << "接收时间: " << msg.received_timestamp_ns << '\n'
                           << "JSON: " << msg.json << "\n\n";
+        else if (do_what == "N") {
+            unsigned int cnt;
+            std::cout << "send N characters, N = ";
+            std::cin >> cnt;
+
+            char ch;
+            std::cout << "send character: ";
+            std::cin >> ch;
+
+            auto msg = shynur::udds::UddsJsonStruct{};
+            msg.json = std::string(cnt, ch);
+            c.send(msg);
+        }
     }
 }
