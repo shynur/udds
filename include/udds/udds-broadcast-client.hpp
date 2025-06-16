@@ -122,6 +122,12 @@ namespace shynur::udds {
             friend decltype(auto) getline(Broadcast_Server_IO& io, std::string& line) {
                 return std::getline(io.from_cli.second, line);
             }
+
+            bool operator!() const {
+                return !(
+                    !!this->from_cli.first and !!this->to_cli.second
+                );
+            }
         } cli_io;
 
         /**
@@ -258,18 +264,6 @@ namespace shynur::udds {
          *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
          */
         auto received_from() {
-            this->cli_io << "received_from.keys" << ' ';
-            std::size_t num_cars;
-            this->cli_io >> num_cars;
-            std::clog << "num_cars=" << num_cars << '\n';
-
-            auto robots = std::vector<std::string>{};
-            for (auto i = 0u; i != num_cars; ++i) {
-                std::string robot_id;
-                this->cli_io >> robot_id;
-                robots.push_back(std::move(robot_id));
-            }
-
             struct Range {
                 Broadcast_Client& client;
                 const std::vector<std::string> robot_ids;
@@ -330,7 +324,24 @@ namespace shynur::udds {
                 auto   end() const -> iterator {return {this->client, this->robot_ids.cend()  };}
             };
 
-            return Range{*this, std::move(robots)};
+            return Range{
+                *this,
+                [this] {
+                    this->cli_io << "received_from.keys" << ' ';
+
+                    std::size_t num_cars;
+                    this->cli_io >> num_cars;
+                    std::clog << "num_cars=" << num_cars << '\n';
+
+                    auto robots = std::vector<std::string>{};
+                    for (auto _ : std::vector<char>(num_cars)) {
+                        std::string robot_id;
+                        this->cli_io >> robot_id;
+                        robots.push_back(std::move(robot_id));
+                    }
+                    return robots;
+                }()
+            };
         }
     };
 }

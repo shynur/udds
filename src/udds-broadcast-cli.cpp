@@ -226,8 +226,11 @@ int main(const int argc, const char *const argv[]) {
 
             auto message = UddsJsonProto{};
             for (auto _ : std::views::iota(0, /* number of fields: */ 4)) {
-                std::string field_name;
-                cin_with_check >> field_name;
+                const auto field_name = [] {
+                    std::string field_name;
+                    cin_with_check >> field_name;
+                    return field_name;
+                }();
 
                 if (field_name == "x")
                     cin_with_check >> message.x();
@@ -235,16 +238,18 @@ int main(const int argc, const char *const argv[]) {
                     cin_with_check >> message.y();
                 else if (field_name == "theta")
                     cin_with_check >> message.theta();
-                else if (field_name == "json") {
-                    std::string json;
-                    for (
-                        std::string line;
-                        getline(cin_with_check, line),
-                        line != arg_parser.get_options().end_of_json;
-                    )
-                        json += line + '\n';
-                    message.json() = std::move(json);
-                } else
+                else if (field_name == "json")
+                    message.json() = [] {
+                        std::string json;
+                        for (
+                            std::string line;
+                            getline(cin_with_check, line),
+                            line != arg_parser.get_options().end_of_json;
+                        )
+                            json += line + '\n';
+                        return json;
+                    }();
+                else
                     throw std::runtime_error{
                         std::format("未知字段: {}", field_name)
                     };
