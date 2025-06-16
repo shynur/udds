@@ -251,11 +251,23 @@ int main(const int argc, const char *const argv[]) {
                             line != arg_parser.get_options().end_of_json;
                         )
                             json += line + '\n';
+
+                        const auto stripped_json = std::string_view{
+                            std::ranges::find_if_not(
+                                json,
+                                [](const auto c) {return std::isspace(c);}
+                            ),
+                            std::ranges::find_if_not(
+                                json | std::views::reverse,
+                                [](const auto c) {return std::isspace(c);}
+                            ).base()
+                        };
+
                         std::clog << std::format(
                             "即将发送 len(json)={}\n",
-                            json.length()
+                            stripped_json.length()
                         );
-                        return json;
+                        return std::string{stripped_json};
                     }();
                 else
                     throw std::runtime_error{
