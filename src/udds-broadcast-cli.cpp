@@ -205,6 +205,10 @@ int main(const int argc, const char *const argv[]) {
                 message->json(),
                 arg_parser.get_options().end_of_json
             ) << '\n';
+            std::clog << std::format(
+                "刚才查询的消息 len(json)={}\n",
+                message->json().length()
+            );
         } else if (fn == "received_from.keys") {
             std::cout << std::size(shynur::udds::broadcast::received_from)
                       << '\n';
@@ -247,6 +251,10 @@ int main(const int argc, const char *const argv[]) {
                             line != arg_parser.get_options().end_of_json;
                         )
                             json += line + '\n';
+                        std::clog << std::format(
+                            "即将发送 len(json)={}\n",
+                            json.length()
+                        );
                         return json;
                     }();
                 else
