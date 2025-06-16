@@ -208,7 +208,7 @@ int main(const int argc, const char *const argv[]) {
             std::clog << std::format(
                 "刚才查询的消息 len(json)={}\n",
                 message->json().length()
-            ) << std::endl;
+            );
         } else if (fn == "received_from.keys") {
             std::cout << std::size(shynur::udds::broadcast::received_from)
                       << '\n';
@@ -266,7 +266,7 @@ int main(const int argc, const char *const argv[]) {
                         std::clog << std::format(
                             "即将发送 len(json)={}\n",
                             stripped_json.length()
-                        ) << std::endl;
+                        );
                         return std::string{stripped_json};
                     }();
                 else
