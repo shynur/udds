@@ -318,11 +318,11 @@ namespace shynur::udds {
                                     const auto
                                         lstrip_end = std::find_if_not(
                                             json.cbegin(), json.cend(),
-                                            std::isspace
+                                            [](const auto c) {return std::isspace(c);}
                                         ),
                                         rstrip_begin = std::find_if_not(
                                             json.crbegin(), json.crend(),
-                                            std::isspace
+                                            [](const auto c) {return std::isspace(c);}
                                         ).base();
                                     return std::string{lstrip_end, rstrip_begin};
                                 }();
