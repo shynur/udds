@@ -87,9 +87,10 @@ namespace shynur::udds {
                     ->create_participant(
                         domain_id,
                         [&] {
-                            auto participant_qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
-                            participant_qos.name(participant_name.c_str());
-                            return participant_qos;
+                            auto qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
+                            qos.name(participant_name.c_str());
+                            qos.transport
+                            return qos;
                         }()
                     );
             if (!this->participant)

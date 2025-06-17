@@ -22,7 +22,7 @@ fi
         cat udds-broadcast-client.hpp.bak >> udds-broadcast-client.hpp
         rm udds-broadcast-client.hpp.bak
     )
-    git add . && git commit -m ';' && git push
+    git add . && git commit -m '; 从上游同步代码' && git push
 )
 
 cd `dirname $0`/../bin
