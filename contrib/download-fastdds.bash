@@ -44,12 +44,17 @@ if [ -z $CXX ]; then
     CXX=c++
 fi
 if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
+    echo "使用了 G++"
     for v in {1..14}; do
-        if $CXX --version | grep $CXX | grep ") $v." >/dev/null; then
+        if $CXX --version | grep $CXX | grep ") $v\\." >/dev/null; then
+            echo "使用的 G++ 版本是 $v"
+            SHYNUR_GCC_VERSION_LE_14=1
             break
         fi
-        echo "GCC 版本太高了, '<cstdint>' 不是默认包含的"
-        exit 1
     done
+    if ! (($SHYNUR_GCC_VERSION_LE_14)); then
+        echo "G++ 版本太高了, '<cstdint>' 不是默认包含的"
+        exit 1
+    fi
 fi
 sudo -E ./install.sh --build-cores `nproc` --no-security
