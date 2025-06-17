@@ -30,7 +30,7 @@ int main(int, const char *const argv[2]) {
                           << "长度: " << msg.json.length() << '\n'
                           << "\n";
         else if (do_what == "N") {
-            unsigned int cnt;
+            unsigned cnt;
             std::cout << "send N characters, N = ";
             std::cin >> cnt;
 
