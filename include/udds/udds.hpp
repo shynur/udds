@@ -118,8 +118,7 @@ namespace shynur::udds {
                     topic,
                     ::eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT,
                     &this->writer_listener
-                )
-            );
+                );
             if (!this->writer)
                 goto init_failed;
 
