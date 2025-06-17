@@ -102,14 +102,14 @@ namespace shynur::udds {
                     topic_name.c_str(),
                     proto_name_cstr(),
                     ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
-                )
+                );
             if (!this->topic)
                 goto init_failed;
 
             this->publisher
                 = this->participant->create_publisher(
                     ::eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT
-                )
+                );
             if (!this->publisher)
                 goto init_failed;
 
