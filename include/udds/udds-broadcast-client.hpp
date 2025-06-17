@@ -305,15 +305,28 @@ namespace shynur::udds {
                                 this->client.cli_io >> this->current_message.y;
                             else if (field_name == "theta")
                                 this->client.cli_io >> this->current_message.theta;
-                            else if (field_name == "json") {
-                                std::string json;
-                                for (
-                                    std::string line;
-                                    getline(this->client.cli_io, line), line != cli_option_end_of_json;
-                                )
-                                    json += line + '\n';
-                                this->current_message.json = std::move(json);
-                            } else
+                            else if (field_name == "json")
+                                this->current_message.json = [this] {
+                                    auto json = std::string{};
+                                    for (
+                                        auto line = std::string{};
+                                        getline(this->client.cli_io, line),
+                                        line != cli_option_end_of_json;
+                                    )
+                                        json += line + '\n';
+
+                                    const auto
+                                        lstrip_end = std::find_if_not(
+                                            json.cbegin(), json.cend(),
+                                            std::isspace
+                                        ),
+                                        rstrip_begin = std::find_if_not(
+                                            json.crbegin(), json.crend(),
+                                            std::isspace
+                                        ).base();
+                                    return std::string{lstrip_end, rstrip_begin};
+                                }();
+                            else
                                 throw std::runtime_error{
                                     "未知字段: {}" + field_name
                                 };
