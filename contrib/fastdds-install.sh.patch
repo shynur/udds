@@ -1,6 +1,6 @@
 --- install.sh	2025-04-29 21:09:18.000000000 +0800
 +++ install.sh	2025-06-17 16:08:49.710319638 +0800
-@@ -1,185 +1,196 @@
+@@ -1,185 +1,194 @@
  #!/bin/bash
  # Copyright 2022 Proyectos y Sistemas de Mantenimiento SL (eProsima).
  #
@@ -136,9 +136,9 @@
          # Install dependencies
          apt update
          apt install --yes --no-install-recommends \
-             git \
+-            git \
              build-essential \
-             cmake \
+-            cmake \
              libssl-dev \
              libasio-dev \
              libtinyxml2-dev \
