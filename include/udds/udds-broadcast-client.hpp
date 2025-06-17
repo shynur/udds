@@ -1,25 +1,9 @@
 #pragma once
-#include <array>
-#include <cstdio>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
-#include <cassert>
-#include <csignal>
-#include <cstdint>
-#include <cstdlib>
 #include <errno.h>
-#include <istream>
-#include <ostream>
-#include <utility>
-#include <iostream>
 #include <signal.h>  // kill
 #include <unistd.h>  // dup2, close, fork, pipe
-#include <algorithm>
-#include <stdexcept>
 #include <sys/wait.h>  // waitpid
-#include <type_traits>
+#include <bits/stdc++.h>
 #include <ext/stdio_filebuf.h>
 
 using namespace std::literals;

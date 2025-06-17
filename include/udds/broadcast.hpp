@@ -1,25 +1,6 @@
 /* source code: <https://github.com/shynur/udds> */
 #pragma once
-#include <chrono>
-#include <format>
-#include <memory>
-#include <ranges>
-#include <string>
-#include <thread>
-#include <cassert>
-#include <cstdint>
-#include <numeric>
-#include <utility>
-#include <concepts>
-#include <iostream>
-#include <iterator>
-#include <execution>
-#include <functional>
-#include <type_traits>
-#include <forward_list>
-#include <shared_mutex>
-#include <unordered_map>
-#include <unordered_set>
+#include <bits/stdc++.h>
 #include "./udds.hpp"
 #if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
     #include "UddsJsonProto.hpp"

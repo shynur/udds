@@ -1,20 +1,5 @@
 // 该文件编译后放到 PATH 目录中.
-#include <cctype>
-#include <format>
-#include <ranges>
-#include <string>
-#include <vector>
-#include <cassert>
-#include <csignal>
-#include <cstdlib>
-#include <cstdint>
-#include <cstring>
-#include <iostream>
 #include <unistd.h>  // pipe, write, close, STDIN_FILENO
-#include <algorithm>
-#include <string_view>
-#include <type_traits>
-#include <unordered_map>
 #include "udds/broadcast.hpp"
 
 using namespace std::literals;

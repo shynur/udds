@@ -1,13 +1,6 @@
 /* source code: <https://github.com/shynur/udds> */
 #pragma once
-#include <atomic>
-#include <format>
-#include <memory>
-#include <cassert>
-#include <cstdint>
-#include <concepts>
-#include <iostream>
-#include <functional>
+#include <bits/stdc++.h>
 #include <fastdds/dds/domain/DomainParticipant.hpp>
 #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
 #include <fastdds/dds/publisher/DataWriter.hpp>
@@ -103,7 +96,7 @@ namespace shynur::udds {
                     proto_name_cstr(),
                     [] {
                         auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
-                        qos.reliability().max_blocking_time = 60.0;  // 可靠传输需要允许阻塞比较长的时间.
+                        qos.reliability().max_blocking_time = 1.0;  // 可靠传输需要允许阻塞比较长的时间.
                         return qos;
                     }()
                 );
@@ -288,7 +281,7 @@ namespace shynur::udds {
                             = ::eprosima::fastdds::dds::DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
                         qos.reliability().kind  // 丢失的消息会被重新传输过来.
                             = ::eprosima::fastdds::dds::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
-                        qos.reliability().max_blocking_time = 60.0;  // 可靠传输需要允许阻塞比较长的时间.
+                        qos.reliability().max_blocking_time = 1.0;  // 可靠传输需要允许阻塞比较长的时间.
                         return qos;
                     }()
                 );

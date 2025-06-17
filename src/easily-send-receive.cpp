@@ -1,7 +1,5 @@
 // 使用独立进程进行消息传递的示例.
 #include "udds/udds-broadcast-client.hpp"
-#include <iostream>
-#include <string>
 
 int main(int, const char *const argv[2]) {
     shynur::udds::Broadcast_Client c{ /* Robot ID: */ argv[1], 1};

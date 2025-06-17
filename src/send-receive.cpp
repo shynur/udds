@@ -1,8 +1,4 @@
 #include "udds/broadcast.hpp"
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <cstdlib>
 
 int main(int, const char *argv[2]) {
     shynur::udds::broadcast::init(argv[1]);  // 设置 robot_id
