@@ -26,14 +26,30 @@ fi
 echo
 echo -n '是否要立即执行 installer?  (y/n) '
 read
-if [ "$REPLY" = y ]; then
-    cd fast-dds.installer.d
-    if [ -f install.sh.bak ]; then
-        rm install.sh
-        cp install.sh{.bak,}
-    else
-        cp install.sh{,.bak}
-    fi
-    patch <`dirname $0`/fastdds-install.sh.patch
-    sudo -E ./install.sh --build-cores `nproc` --no-security
+if [ "$REPLY" != y ]; then
+    echo '你可稍后以相同命令再次执行此脚本以继续安装'
+    exit 0
 fi
+
+cd fast-dds.installer.d
+if [ -f install.sh.bak ]; then
+    rm install.sh
+    cp install.sh{.bak,}
+else
+    cp install.sh{,.bak}
+fi
+patch <`dirname $0`/fastdds-install.sh.patch
+
+if [ -z $CXX ]; then
+    CXX=c++
+fi
+if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
+    for v in {1..14}; do
+        if $CXX --version | grep $CXX | grep ") $v." >/dev/null; then
+            break
+        fi
+        echo "GCC 版本太高了, '<cstdint>' 不是默认包含的"
+        exit 1
+    done
+fi
+sudo -E ./install.sh --build-cores `nproc` --no-security
