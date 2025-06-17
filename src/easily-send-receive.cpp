@@ -24,7 +24,9 @@ int main(int, const char *const argv[2]) {
                 std::cout << "小车 ID: " << car << '\n'
                           << "发送时间: " << msg.send_timestamp_ns << '\n'
                           << "接收时间: " << msg.received_timestamp_ns << '\n'
-                          << "JSON: " << msg.json << "\n"
+                          << "JSON: " << (
+                                msg.json.length() <= 40 ? msg.json : msg.json.substr(0, 40) + "..."
+                            ) << "\n"
                           << "长度: " << msg.json.length() << '\n'
                           << "\n";
         else if (do_what == "N") {
