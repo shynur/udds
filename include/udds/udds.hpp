@@ -82,8 +82,7 @@ namespace shynur::udds {
             const std::string participant_name,
             const std::string topic_name
         ): type{new proto_pub_sub_t} {
-            const bool successfully_inited = (
-                this->participant
+            this->participant
                 = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
                     ->create_participant(
                         domain_id,
@@ -92,41 +91,50 @@ namespace shynur::udds {
                             participant_qos.name(participant_name.c_str());
                             return participant_qos;
                         }()
-                    )
-            ) and (
-                this->type.register_type(this->participant), true
-            ) and (
-                this->topic
+                    );
+            if (!this->participant)
+                goto init_failed;
+
+            this->type.register_type(this->participant);
+
+            this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
                     proto_name_cstr(),
                     ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
                 )
-            ) and (
-                this->publisher
+            if (!this->topic)
+                goto init_failed;
+
+            this->publisher
                 = this->participant->create_publisher(
                     ::eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT
                 )
-            ) and (
-                this->writer
+            if (!this->publisher)
+                goto init_failed;
+
+            this->writer
                 = this->publisher->create_datawriter(
                     topic,
                     ::eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT,
                     &this->writer_listener
                 )
             );
-            if (!successfully_inited)
-                throw std::runtime_error(  // TODO: 更合适的错误类型
+            if (!this->writer)
+                goto init_failed;
+
+            std::clog << std::format(
+                R"({{"role":"Publisher","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
+                "\n",
+                domain_id, participant_name, topic_name
+            ) << std::flush;
+
+            [[unlikely]] init_failed:
+                throw std::runtime_error{  // TODO: 更合适的错误类型
                     std::format(
                         "Failed to initialize Publisher"
                     )  // TODO: 更详细的错误信息
-                );
-            else
-                std::clog << std::format(
-                    R"({{"role":"Publisher","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
-                    "\n",
-                    domain_id, participant_name, topic_name
-                ) << std::flush;
+                };
         }
         ~Publisher() {
             if (this->writer)
