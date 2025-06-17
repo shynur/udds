@@ -1,7 +1,12 @@
 #! /bin/bash
 
 # Usage: (cd /tmp; "$0" 3.2.2)
+set -e
 
+if [ -z $1 ]; then
+    echo '需要提供 Fast DDS 的版本号, 建议使用 3.2.2'
+    exit 1
+fi
 WHICH_FASTDDS_I_WANNA_DOWNLOAD=eProsima_Fast-DDS-v$1-Linux.tgz
 
 if [ -f fast-dds.installer.d/install.sh ]; then
@@ -22,5 +27,13 @@ echo
 echo -n '是否要立即执行 installer?  (y/n) '
 read
 if [ "$REPLY" = y ]; then
-    sudo ./fast-dds.installer.d/install.sh --build-cores `nproc` --no-security
+    cd fast-dds.installer.d
+    if [ -f install.sh.bak ]; then
+        rm install.sh
+        cp install.sh{.bak,}
+    else
+        cp install.sh{,.bak}
+    fi
+    patch <`dirname $0`/fastdds-install.sh.patch
+    sudo -E ./install.sh --build-cores `nproc` --no-security
 fi

@@ -89,7 +89,6 @@ namespace shynur::udds {
                         [&] {
                             auto qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
                             qos.name(participant_name.c_str());
-                            qos.transport
                             return qos;
                         }()
                     );
