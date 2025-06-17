@@ -1,6 +1,7 @@
 /* source code: <https://github.com/shynur/udds> */
 #pragma once
 #include <bits/stdc++.h>
+#include <execution>
 #include "./udds.hpp"
 #if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
     #include "UddsJsonProto.hpp"
