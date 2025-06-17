@@ -211,7 +211,7 @@ namespace shynur::udds::broadcast {
                     std::clog << std::format(
                         "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
                         pack.latency(), pack.received_timestamp() - pack.send_timestamp()
-                    );
+                    ) << std::flush;
                     return (
                         pack.latency() - (pack.received_timestamp() - pack.send_timestamp())
                     ) / 2;
@@ -240,12 +240,12 @@ namespace shynur::udds::broadcast {
                         ).count() / 1e9
                     );
 
-                    std::clog << "Received clock sync pack.\n";
+                    std::clog << "Received clock sync pack.\n" << std::flush;
                     if (pack.latency()) {
                         std::clog << std::format(
                             "Clock sync pack returned from {}\n",
                             pack.sender()
-                        );
+                        ) << std::flush;
                         const auto _ = std::unique_lock{this->packs_mutex};
                         this->packs[pack.sender()].push_back(std::move(pack));
                     } else
@@ -297,7 +297,7 @@ namespace shynur::udds::broadcast {
                 std::clog << std::format(
                     "Replying clock sync pack to {}...\n",
                     sender
-                );
+                ) << std::flush;
                 pack.send_timestamp(
                     std::chrono::duration_cast<std::chrono::nanoseconds>(
                         std::chrono::system_clock::now().time_since_epoch()
@@ -329,7 +329,7 @@ namespace shynur::udds::broadcast {
                 std::clog << std::format(
                     "Sending clock sync pack {}/{} to {}...\n",
                     i + 1, this->NUM_PACKS, json_sender
-                );
+                ) << std::flush;
                 pack.send_timestamp(
                     std::chrono::duration_cast<std::chrono::nanoseconds>(
                         std::chrono::system_clock::now().time_since_epoch()
@@ -380,6 +380,10 @@ namespace shynur::udds::broadcast {
                         std::chrono::system_clock::now().time_since_epoch()
                     ).count()
                 );
+                std::clog << std::format(
+                    "Received broadcast message from {}\n",
+                    message.robot_id()
+                ) << std::flush;
 
                 if (!received_from.contains(message.robot_id()))
                     std::thread{

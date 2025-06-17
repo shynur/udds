@@ -151,14 +151,18 @@ namespace shynur::udds {
             []() -> std::decay_t<decltype(this->to_cli)> {
                 int fd[2];
                 ::pipe(fd);
-                std::clog << "to_cli: " << fd[0] << " <- " << fd[1] << '\n';
+                std::clog << "to_cli: "s + std::to_string{fd[0]}
+                             + " <- " + std::to_string{fd[1]} + '\n'
+                          << std::flush;
                 return {fd[0], fd[1]};
             }()
         }, from_cli{
             []() -> std::decay_t<decltype(this->from_cli)> {
                 int fd[2];
                 ::pipe(fd);
-                std::clog << "from_cli: " << fd[0] << " <- " << fd[1] << '\n';
+                std::clog << "from_cli: "s + std::to_string(fd[0])
+                             + " <- " + std::to_string(fd[1]) + '\n'
+                          << std::flush;
                 return {fd[0], fd[1]};
             }()
         }, cli_pid{
@@ -173,16 +177,18 @@ namespace shynur::udds {
                         )
                     );
 
-                std::clog << "Forking...\n";
+                std::clog << "Forking...\n" << std::flush;
                 const auto cli_pid = ::fork();
-                std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n';
+                std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n'
+                          << std::flush;
 
                 if (cli_pid == 0) {
                     ::close(this->to_cli[1]), ::close(this->from_cli[0]);
                     ::dup2(  this->to_cli[0], 0), ::close(  this->to_cli[0]);
                     ::dup2(this->from_cli[1], 1), ::close(this->from_cli[1]);
 
-                    std::clog << "exec "s + cli_program + " ...\n";
+                    std::clog << "exec "s + cli_program + " ...\n"
+                              << std::flush;
                     ::execvp(
                         cli_program,
                         [options=options]() mutable {
@@ -235,7 +241,7 @@ namespace shynur::udds {
                 return cli_pid;
             }()
         }, cli_io{this->to_cli[1], this->from_cli[0]} {
-            std::clog << "Client 创建完成!\n";
+            std::clog << "Client 创建完成!\n" << std::flush;
         }
 
         ~Broadcast_Client() {
@@ -243,7 +249,7 @@ namespace shynur::udds {
 
             ::kill(this->cli_pid, SIGINT);
             ::waitpid(this->cli_pid, nullptr, 0);
-            std::clog << "Udds Server 已经跟随 Client 被关闭.\n";
+            std::clog << "Udds Server 已经跟随 Client 被关闭.\n" << std::flush;
         }
 
         /**
@@ -331,7 +337,8 @@ namespace shynur::udds {
 
                     std::size_t num_cars;
                     this->cli_io >> num_cars;
-                    std::clog << "num_cars=" << num_cars << '\n';
+                    std::clog << "num_cars=" + std::to_string(num_cars) + '\n'
+                              << std::flush;
 
                     auto robots = std::vector<std::string>{};
                     for (auto _ : std::vector<char>(num_cars)) {

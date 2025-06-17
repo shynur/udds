@@ -127,6 +127,8 @@ struct cin_with_check_t {
         );
         static auto cstdio_desynced [[maybe_unused]]
           = std::ios_base::sync_with_stdio(false);
+        static auto& clog_auto_flush [[maybe_unused]]
+          = std::clog << std::unitbuf;
     }
     static auto check() {
         if (!std::cin) [[unlikely]] {
@@ -167,7 +169,7 @@ int main(const int argc, const char *const argv[]) {
         std::clog << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{arg_parser.get_options().robot_id});
     if (arg_parser.get_options().development_mode)
-        std::clog << "Broadcast server initialized." << std::endl;
+        std::clog << "Broadcast server initialized.\n" << std::flush;
 
     while (true) {
         std::string fn;
@@ -177,10 +179,9 @@ int main(const int argc, const char *const argv[]) {
             std::string robot_id;
             cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
 
-            std::cout << (
-                shynur::udds::broadcast::received_from.contains(robot_id)
-                ? "true" : "false"
-            ) << '\n';
+            std::cout << std::boolalpha
+                      << shynur::udds::broadcast::received_from.contains(robot_id)
+                      << '\n';
         } else if (fn == "received_from.operator[]") {
             std::string robot_id;
             cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.

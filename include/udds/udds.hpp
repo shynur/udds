@@ -126,7 +126,7 @@ namespace shynur::udds {
                     R"({{"role":"Publisher","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
                     "\n",
                     domain_id, participant_name, topic_name
-                );
+                ) << std::flush;
         }
         ~Publisher() {
             if (this->writer)
@@ -295,7 +295,7 @@ namespace shynur::udds {
                     R"({{"role":"Subscriber","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
                     "\n",
                     domain_id, participant_name, topic_name
-                );
+                ) << std::flush;
         }
         ~Subscriber() {
             if (this->reader)
