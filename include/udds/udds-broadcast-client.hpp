@@ -151,8 +151,8 @@ namespace shynur::udds {
             []() -> std::decay_t<decltype(this->to_cli)> {
                 int fd[2];
                 ::pipe(fd);
-                std::clog << "to_cli: "s + std::to_string{fd[0]}
-                             + " <- " + std::to_string{fd[1]} + '\n'
+                std::clog << "to_cli: "s + std::to_string(fd[0])
+                             + " <- " + std::to_string(fd[1]) + '\n'
                           << std::flush;
                 return {fd[0], fd[1]};
             }()
