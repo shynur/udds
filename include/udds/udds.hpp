@@ -101,7 +101,11 @@ namespace shynur::udds {
                 = this->participant->create_topic(
                     topic_name.c_str(),
                     proto_name_cstr(),
-                    ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
+                    [] {
+                        auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
+                        qos.reliability().max_blocking_time = 60.0;  // 可靠传输需要允许阻塞比较长的时间.
+                        return qos;
+                    }()
                 );
             if (!this->topic)
                 goto failed_init;
@@ -128,12 +132,13 @@ namespace shynur::udds {
                 domain_id, participant_name, topic_name
             ) << std::flush;
 
-            [[unlikely]] failed_init:
-                throw std::runtime_error{  // TODO: 更合适的错误类型
-                    std::format(
-                        "Failed to initialize Publisher"
-                    )  // TODO: 更详细的错误信息
-                };
+            if (false)
+                [[unlikely]] failed_init:
+                    throw std::runtime_error{  // TODO: 更合适的错误类型
+                        std::format(
+                            "Failed to initialize Publisher"
+                        )  // TODO: 更详细的错误信息
+                    };
         }
         ~Publisher() {
             if (this->writer)
@@ -271,13 +276,21 @@ namespace shynur::udds {
             if (!this->participant)
                 goto failed_init;
 
-            this->type.register_type(this->participant), true
+            this->type.register_type(this->participant);
 
             this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
                     proto_name_cstr(),
-                    ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT
+                    [] {
+                        auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
+                        qos.durability().kind  // 订阅该主题后自动获取历史消息.
+                            = ::eprosima::fastdds::dds::DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
+                        qos.reliability().kind  // 丢失的消息会被重新传输过来.
+                            = ::eprosima::fastdds::dds::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+                        qos.reliability().max_blocking_time = 60.0;  // 可靠传输需要允许阻塞比较长的时间.
+                        return qos;
+                    }()
                 );
             if (!this->topic)
                 goto failed_init;
@@ -304,12 +317,13 @@ namespace shynur::udds {
                 domain_id, participant_name, topic_name
             ) << std::flush;
 
-            [[unlikely]] failed_init:
-                throw std::runtime_error{  // TODO: 更合适的错误类型
-                    std::format(
-                        "Failed to initialize Publisher"
-                    )  // TODO: 更详细的错误信息
-                };
+            if (false)
+                [[unlikely]] failed_init:
+                    throw std::runtime_error{  // TODO: 更合适的错误类型
+                        std::format(
+                            "Failed to initialize Publisher"
+                        )  // TODO: 更详细的错误信息
+                    };
         }
         ~Subscriber() {
             if (this->reader)
