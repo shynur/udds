@@ -2,11 +2,14 @@
 
 cd `dirname $0`/..
 
-mv .git /tmp/shynur-udds-git-dir
+rm -rf /tmp/shynur-udds-{git,bin}.d
+mv .git /tmp/shynur-udds-git.d
+mv  bin /tmp/shynur-udds-bin.d
 
 rm -rf  ./* ./.*
 
-mv /tmp/shynur-udds-git-dir .git
+mv /tmp/shynur-udds-git.d .git
+mv /tmp/shynur-udds-bin.d  bin
 
 git reset --hard HEAD
 git pull
