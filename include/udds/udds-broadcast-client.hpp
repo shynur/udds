@@ -30,9 +30,9 @@ namespace shynur::udds {
         const std::array<int, 2> to_cli, from_cli;
         const decltype(::fork()) cli_pid;  // cli_pid 一定要在 to_cli 和 from_cli 之后声明!!!
         class Broadcast_Server_IO {
-#if __cplusplus < 201703L
-            __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
-#endif
+            #if __cplusplus < 201703L
+                __gnu_cxx::stdio_filebuf<char> *_tmp_var_within_init;
+            #endif
 
             std::pair<
                 const std::unique_ptr<__gnu_cxx::stdio_filebuf<char>>,
@@ -47,39 +47,43 @@ namespace shynur::udds {
             Broadcast_Server_IO(
                 const int to_cli, const int from_cli
             ): to_cli{
-#if __cplusplus >= 201703L
-                [&, this] {
-                    auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(to_cli, std::ios::out);
-                    return std::decay_t<decltype(this->to_cli)>{
-                        std::move(buf), buf.get()
-                    };
-                }()
-#else
-                _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{to_cli, std::ios::out},
-                _tmp_var_within_init
-#endif
+                #if __cplusplus >= 201703L
+                    [&, this] {
+                        auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(
+                            to_cli, std::ios::out
+                        );
+                        return std::decay_t<decltype(this->to_cli)>{
+                            std::move(buf), buf.get()
+                        };
+                    }()
+                #else
+                    _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{to_cli, std::ios::out},
+                    _tmp_var_within_init
+                #endif
             }, from_cli{
-#if __cplusplus >= 201703L
-                [&, this] {
-                    auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(from_cli, std::ios::in);
-                    return std::decay_t<decltype(this->from_cli)>{
-                        std::move(buf), buf.get()
-                    };
-                }()
-#else
-                _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{from_cli, std::ios::in},
-                _tmp_var_within_init
-#endif
+                #if __cplusplus >= 201703L
+                    [&, this] {
+                        auto buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(
+                            from_cli, std::ios::in
+                        );
+                        return std::decay_t<decltype(this->from_cli)>{
+                            std::move(buf), buf.get()
+                        };
+                    }()
+                #else
+                    _tmp_var_within_init = new __gnu_cxx::stdio_filebuf<char>{from_cli, std::ios::in},
+                    _tmp_var_within_init
+                #endif
             } {
                 this->from_cli.second.tie(&this->to_cli.second);
             }
 
-#if __cplusplus >= 202002L
+        #if __cplusplus >= 202002L
             auto operator<<(auto&& i)
-#else
+        #else
             template <typename T>
             auto operator<<(T&& i)
-#endif
+        #endif
             -> auto& {
                 this->to_cli.second << std::forward<decltype(i)>(i);
                 return *this;
@@ -92,12 +96,12 @@ namespace shynur::udds {
                 return *this;
             }
 
-#if __cplusplus >= 202002L
+        #if __cplusplus >= 202002L
             auto operator>>(auto&& o)
-#else
+        #else
             template <typename T>
             auto operator>>(T&& o)
-#endif
+        #endif
             -> auto& {
                 this->from_cli.second >> std::forward<decltype(o)>(o);
                 return *this;
@@ -180,17 +184,17 @@ namespace shynur::udds {
 
                             static auto arg0 = cli_program + " (referer=udds-broadcast-client)"s;
                             argv.push_back(
-#if __cplusplus < 201703L
-                                (char *)
-#endif
+                                #if __cplusplus < 201703L
+                                    (char *)
+                                #endif
                                 arg0.data()
                             );
 
                             for (auto& option : options)
                                 argv.push_back(
-#if __cplusplus < 201703L
-                                    (char *)
-#endif
+                                    #if __cplusplus < 201703L
+                                        (char *)
+                                    #endif
                                     option.data()
                                 );
 
