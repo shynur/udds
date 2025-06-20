@@ -126,7 +126,8 @@ namespace shynur::udds {
             ) << std::flush;
 
             if (false) {
-                [[unlikely]] failed_init:
+                failed_init:
+                    [[unlikely]];
                     throw std::runtime_error{  // TODO: 更合适的错误类型
                         std::format(
                             "Failed to initialize Publisher"
@@ -312,7 +313,8 @@ namespace shynur::udds {
             ) << std::flush;
 
             if (false) {
-                [[unlikely]] failed_init:
+                failed_init:
+                    [[unlikely]];
                     throw std::runtime_error{  // TODO: 更合适的错误类型
                         std::format(
                             "Failed to initialize Publisher"
