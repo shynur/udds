@@ -157,7 +157,7 @@ namespace shynur::udds {
                         "CLI 程序不支持含空白字符的参数"
                         && std::none_of(
                             option.cbegin(), option.cend(),
-                            [](const auto& c) {return std::isspace(c);}
+                            [](auto c) {return std::isspace(c);}
                         )
                     );
 
@@ -299,16 +299,16 @@ namespace shynur::udds {
                                     )
                                         json += line + '\n';
 
-                                    const auto
-                                        lstrip_end = std::find_if_not(
+                                    return std::string{
+                                        std::find_if_not(
                                             json.cbegin(), json.cend(),
-                                            [](const auto c) {return std::isspace(c);}
+                                            [](auto c) {return std::isspace(c);}
                                         ),
-                                        rstrip_begin = std::find_if_not(
+                                        std::find_if_not(
                                             json.crbegin(), json.crend(),
-                                            [](const auto c) {return std::isspace(c);}
-                                        ).base();
-                                    return std::string{lstrip_end, rstrip_begin};
+                                            [](auto c) {return std::isspace(c);}
+                                        ).base()
+                                    };
                                 }();
                             else
                                 throw std::runtime_error{
@@ -338,11 +338,12 @@ namespace shynur::udds {
                               << std::flush;
 
                     auto robots = std::vector<std::string>{};
-                    for (auto _ : std::vector<char>(num_cars)) {
-                        std::string robot_id;
-                        this->cli_io >> robot_id;
-                        robots.push_back(std::move(robot_id));
-                    }
+                    for (auto _i = 0u; _i < num_cars; ++_i)
+                        robots.push_back([this] {
+                            std::string robot_id;
+                            this->cli_io >> robot_id;
+                            return robot_id;
+                        }());
                     return robots;
                 }()
             };

@@ -77,7 +77,7 @@ namespace shynur::udds::broadcast {
                     return std::forward_list<const std::string *>{
                         std::from_range,
                         this->messages | std::views::keys | std::views::transform(
-                            [](const auto& key) { return std::addressof(key); }
+                            [](const auto& key) {return std::addressof(key);}
                         )
                     };
                 }
@@ -114,7 +114,7 @@ namespace shynur::udds::broadcast {
                                 this->messages_from[**this->key_iter],
                             };
                         }
-                        auto operator!=(const std::default_sentinel_t&) const {
+                        auto operator!=(std::default_sentinel_t) const {
                             return this->key_iter != std::cend(this->keys_snapshot);
                         }
                     };
