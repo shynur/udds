@@ -215,9 +215,7 @@ namespace shynur::udds {
                     };
                 }
 
-                std::this_thread::sleep_for(4ms);  // 子进程可能会因为各种原因未能正常启动, 等待这么久应该足够判断它是不是真的退出了.
-                int cli_stat;
-                //std::cerr << ::waitpid(this->cli_pid, &cli_stat, WNOHANG) << ":::" << WEXITSTATUS(cli_stat) << '\n';
+                std::this_thread::sleep_for(40ms);  // 子进程可能会因为各种原因未能正常启动, 等待这么久应该足够判断它是不是真的退出了.
                 if (int cli_stat; ::waitpid(this->cli_pid, &cli_stat, WNOHANG) && WEXITSTATUS(cli_stat)) {
                     if (WIFEXITED(cli_stat))
                         throw std::runtime_error{
