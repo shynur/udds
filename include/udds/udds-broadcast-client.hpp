@@ -211,16 +211,16 @@ namespace shynur::udds {
                     };
                 }
 
-                // 子进程可能会退出, 等待这么久应该足够判断它是不是真的退出了.
-                std::this_thread::sleep_for(4ms);
-                if (
-                    int cli_stat;
-                    ::waitpid(this->cli_pid, &cli_stat, WNOHANG)
-                    && WIFEXITED(cli_stat) && WEXITSTATUS(cli_stat) == EXIT_FAILURE
-                )
+                std::this_thread::sleep_for(4ms);  // 子进程可能会因为各种原因未能正常启动, 等待这么久应该足够判断它是不是真的退出了.
+                if (int cli_stat; ::waitpid(this->cli_pid, &cli_stat, WNOHANG) && WEXITSTATUS(cli_stat)) {
+                    if (WIFEXITED(cli_stat))
+                        throw std::runtime_error{
+                            "Failed to exec `"s + cli_program + "'!!!"
+                        };
                     throw std::runtime_error{
-                        "Failed to exec `"s + cli_program + "'!!!"
+                        "子进程 `"s + cli_program + "' 异常退出!!!"
                     };
+                }
 
                 return cli_pid;
             }()
