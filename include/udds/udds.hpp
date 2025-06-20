@@ -125,13 +125,14 @@ namespace shynur::udds {
                 domain_id, participant_name, topic_name
             ) << std::flush;
 
-            if (false)
+            if (false) {
                 [[unlikely]] failed_init:
                     throw std::runtime_error{  // TODO: 更合适的错误类型
                         std::format(
                             "Failed to initialize Publisher"
                         )  // TODO: 更详细的错误信息
                     };
+            }
         }
         ~Publisher() {
             if (this->writer)
@@ -310,13 +311,14 @@ namespace shynur::udds {
                 domain_id, participant_name, topic_name
             ) << std::flush;
 
-            if (false)
+            if (false) {
                 [[unlikely]] failed_init:
                     throw std::runtime_error{  // TODO: 更合适的错误类型
                         std::format(
                             "Failed to initialize Publisher"
                         )  // TODO: 更详细的错误信息
                     };
+            }
         }
         ~Subscriber() {
             if (this->reader)
