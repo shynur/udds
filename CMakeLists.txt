@@ -6,7 +6,7 @@ project(UddsExample CXX)
 # 尽可能使用静态链接.
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++"
+    "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc"
 )
 
 
