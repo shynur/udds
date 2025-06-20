@@ -3,6 +3,8 @@
 # Usage: (cd /tmp; "$0" 3.2.2)
 set -e
 
+SCRIPT_DIR=`cd dirname $0; pwd`
+
 if [ -z $1 ]; then
     echo '需要提供 Fast DDS 的版本号, 建议使用 3.2.2'
     exit 1
@@ -38,7 +40,7 @@ if [ -f install.sh.bak ]; then
 else
     cp install.sh{,.bak}
 fi
-patch <`dirname $0`/fastdds-install.sh.patch
+patch <$SCRIPT_DIR/fastdds-install.sh.patch
 
 if [ -z $CXX ]; then
     CXX=c++
