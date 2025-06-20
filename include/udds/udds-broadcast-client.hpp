@@ -219,12 +219,11 @@ namespace shynur::udds {
                 // 等待 CLI 发送一个 space 字符, 如果超时则说明有问题:
                 if (
                     ::select(
-                        this->from_cli[0]+1, &[this] {
-                            ::fd_set rfds;
+                        this->from_cli[0]+1, [this, rfds=::fd_set{}] mutable {
                             FD_ZERO(&rfds);
                             const auto ifd = this->from_cli[0];
                             FD_SET(ifd, &rfds);
-                            return rfds;
+                            return &rfds;
                         }(),
                         nullptr, nullptr,
                         [] {
