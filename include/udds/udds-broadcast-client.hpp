@@ -228,7 +228,7 @@ namespace shynur::udds {
                         nullptr, nullptr,
                         [] {
                             static auto wait_time = ::timeval{
-                                .tv_usec=4000
+                                .tv_usec=40'000
                             };
                             return &wait_time;
                         }()
