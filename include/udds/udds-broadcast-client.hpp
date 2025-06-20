@@ -227,11 +227,11 @@ namespace shynur::udds {
                             return rfds;
                         }(),
                         nullptr, nullptr,
-                        &[] {
+                        [] {
                             static const auto wait_time = ::timeval{
                                 .tv_usec=4000
                             };
-                            return wait_time;
+                            return &wait_time;
                         }()
                     )
                 ) {
