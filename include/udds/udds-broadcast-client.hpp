@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <signal.h>  // kill
 #include <unistd.h>  // dup2, close, fork, pipe
+#include <sys/time.h>  // select
 #include <sys/wait.h>  // waitpid
 #include <bits/stdc++.h>
 #include <ext/stdio_filebuf.h>
@@ -171,7 +172,7 @@ namespace shynur::udds {
                           << std::flush;
 
                 if (cli_pid == 0) {
-                    ::close(this->to_cli[1]), ::close(this->from_cli[0]);
+                    this->close_my_fd();
                     ::dup2(  this->to_cli[0], 0), ::close(  this->to_cli[0]);
                     ::dup2(this->from_cli[1], 1), ::close(this->from_cli[1]);
 
@@ -209,21 +210,47 @@ namespace shynur::udds {
                 ::close(this->to_cli[0]), ::close(this->from_cli[1]);
 
                 if (cli_pid == -1) {
-                    ::close(this->to_cli[1]), ::close(this->from_cli[0]);
+                    this->close_my_fd();
                     throw std::runtime_error{
                         "Failed to fork sub-process for "s + cli_program
                     };
                 }
 
-                std::this_thread::sleep_for(400ms);  // 子进程可能会因为各种原因未能正常启动, 等待这么久应该足够判断它是不是真的退出了.
-                if (int cli_stat; ::waitpid(this->cli_pid, &cli_stat, WNOHANG) && WEXITSTATUS(cli_stat)) {
-                    if (WIFEXITED(cli_stat))
+                // 等待 CLI 发送一个 space 字符, 如果超时则说明有问题:
+                if (
+                    ::select(
+                        this->from_cli[0]+1, &[this] {
+                            ::fd_set rfds;
+                            FD_ZERO(&rfds);
+                            const auto ifd = this->from_cli[0];
+                            FD_SET(ifd, &rfds);
+                            return rfds;
+                        }(),
+                        nullptr, nullptr,
+                        &[] {
+                            static const auto wait_time = ::timeval{
+                                .tv_usec=4000
+                            };
+                            return wait_time;
+                        }()
+                    )
+                ) {
+                    this->close_my_fd();
+                    if (int cli_stat; ::waitpid(cli_pid, &cli_stat, WNOHANG) && WEXITSTATUS(cli_stat)) {
+                        if (WIFEXITED(cli_stat))
+                            throw std::runtime_error{
+                                "Failed to exec `"s + cli_program + "'!!!"
+                            };
                         throw std::runtime_error{
-                            "Failed to exec `"s + cli_program + "'!!!"
+                            "子进程 `"s + cli_program + "' 异常退出!!!"
                         };
-                    throw std::runtime_error{
-                        "子进程 `"s + cli_program + "' 异常退出!!!"
-                    };
+                    } else {
+                        ::kill(cli_pid, SIGINT);
+                        ::waitpid(cli_pid, nullptr, 0);
+                        throw std::runtime_error{
+                            "子进程 `"s + cli_program + "' 初始化超时!!!"
+                        };
+                    }
                 }
 
                 return cli_pid;
@@ -233,11 +260,15 @@ namespace shynur::udds {
         }
 
         ~Broadcast_Client() {
-            ::close(this->to_cli[1]), ::close(this->from_cli[0]);
-
+            this->close_my_fd();
             ::kill(this->cli_pid, SIGINT);
             ::waitpid(this->cli_pid, nullptr, 0);
             std::clog << "Udds Server 已经跟随 Client 被关闭.\n" << std::flush;
+        }
+
+        void close_my_fd() {
+            ::close(this->to_cli[1]);
+            ::close(this->from_cli[0]);
         }
 
         /**

@@ -153,6 +153,7 @@ int main(const int argc, const char *const argv[]) {
     if (arg_parser.get_options().development_mode)
         std::clog << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{arg_parser.get_options().robot_id});
+    std::cout << std::endl;  // 输出一个空白字符表示我正常执行到此处了.
     if (arg_parser.get_options().development_mode)
         std::clog << "Broadcast server initialized.\n" << std::flush;
 
