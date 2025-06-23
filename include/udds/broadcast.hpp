@@ -19,7 +19,7 @@ namespace shynur::udds::broadcast {
 
     constexpr auto DOMAIN_ID = 1;
     constexpr auto TOPIC_NAME = "broadcast";
-    constexpr auto DISCOVERY_DELAY = 400ms;
+    constexpr auto DISCOVERY_DELAY = 4ms;
 
     namespace profile {
         inline std::string self_robot_id;

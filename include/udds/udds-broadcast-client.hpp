@@ -223,7 +223,7 @@ namespace shynur::udds {
                             pfd.fd = this->from_cli[0];
                             pfd.events = POLLIN;
                             return &pfd;
-                        }(), 1, 4
+                        }(), 1, 40
                     ) == 0
                 ) {
                     this->close_my_fd();
