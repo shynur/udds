@@ -216,7 +216,7 @@ namespace shynur::udds {
                     };
                 }
 
-                // 等待 CLI 发送一个 space 字符, 如果超时则说明有问题:
+                // 等待 CLI 发送一个 whitespace 字符, 如果超时则说明有问题:
                 if (
                     ::select(
                         this->from_cli[0]+1, [this, rfds=::fd_set{}]() mutable {
@@ -227,8 +227,9 @@ namespace shynur::udds {
                         }(),
                         nullptr, nullptr,
                         [] {
-                            static ::timeval wait_time;
-                            wait_time.tv_usec=40'000;
+                            static auto wait_time = ::timeval{
+                                .tv_usec=40'000
+                            };
                             return &wait_time;
                         }()
                     )
