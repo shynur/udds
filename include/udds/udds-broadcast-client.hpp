@@ -218,13 +218,8 @@ namespace shynur::udds {
 
                 // 等待 CLI 发送一个 whitespace 字符, 如果超时则说明有问题:
                 if (
-                    ::poll(
-                        [this, pfd=::pollfd{}]() mutable {
-                            pfd.fd = this->from_cli[0];
-                            pfd.events = POLLIN;
-                            return &pfd;
-                        }(), 1, 40
-                    ) == 0
+                    auto pfd = ::pollfd{.fd=this->from_cli[0], .events=POLLIN};
+                    ::poll(&pfd, 1, 4000) == 0 || pfd.revents & POLLHUP
                 ) {
                     this->close_my_fd();
                     if (int cli_stat; ::waitpid(cli_pid, &cli_stat, WNOHANG) && WEXITSTATUS(cli_stat)) {
