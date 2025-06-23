@@ -1,9 +1,9 @@
 #pragma once
+#include <poll.h>
 #include <errno.h>
-#include <signal.h>  // kill
-#include <unistd.h>  // dup2, close, fork, pipe
-#include <sys/time.h>  // select
-#include <sys/wait.h>  // waitpid
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <bits/stdc++.h>
 #include <ext/stdio_filebuf.h>
 
@@ -218,21 +218,13 @@ namespace shynur::udds {
 
                 // 等待 CLI 发送一个 whitespace 字符, 如果超时则说明有问题:
                 if (
-                    ::select(
-                        this->from_cli[0]+1, [this, rfds=::fd_set{}]() mutable {
-                            FD_ZERO(&rfds);
-                            const auto ifd = this->from_cli[0];
-                            FD_SET(ifd, &rfds);
-                            return &rfds;
-                        }(),
-                        nullptr, nullptr,
-                        [] {
-                            static auto wait_time = ::timeval{
-                                .tv_usec=40'000
-                            };
-                            return &wait_time;
-                        }()
-                    )
+                    ::poll(
+                        [this, pfd=::pollfd{}]() mutable {
+                            pfd.fd = this->from_cli[0];
+                            pfd.events = POLLIN;
+                            return &pfd;
+                        }(), 1, 4
+                    ) == 0
                 ) {
                     this->close_my_fd();
                     if (int cli_stat; ::waitpid(cli_pid, &cli_stat, WNOHANG) && WEXITSTATUS(cli_stat)) {
