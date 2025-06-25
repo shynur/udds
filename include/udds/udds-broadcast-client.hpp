@@ -191,13 +191,28 @@ namespace shynur::udds {
                                 arg0.data()
                             );
 
-                            for (auto& option : options)
+                            for (auto& option : options) {
+                                if (const auto param = "--robot_id="s; option.starts_with(param)) {
+                                    auto robot_id_pattern = ""s;
+                                    for (auto c : option.substr(param.length()))
+                                        robot_id_pattern += "["s + c +']';
+                                    std::system(
+                                        (
+                                            "kill -2 `ps -A -o pid=,args= "
+                                            "| grep '^[[:blank:]]*[[:digit:]]\\+[[:blank:]]\\+"s
+                                            + cli_program + "\\([[:blank:]]\\+.\\+\\)*[[:blank:]]\\+"
+                                            "--robot_id="s + robot_id_pattern + "\\([[:blank:]]\\+\\|$\\)' "
+                                            "| awk '{print $1}'`"
+                                        ).c_str()
+                                    );
+                                }
                                 argv.push_back(
                                     #if __cplusplus < 201703L
                                         (char *)
                                     #endif
                                     option.data()
                                 );
+                            }
 
                             argv.push_back(nullptr);
                             return argv;
@@ -275,7 +290,7 @@ namespace shynur::udds {
          *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
          */
         auto received_from() {
-            struct Range {
+            class Range {
                 Broadcast_Client& client;
                 const std::vector<std::string> robot_ids;
 
@@ -344,8 +359,10 @@ namespace shynur::udds {
                     }
                 };
 
+              public:
                 auto begin() const -> iterator {return {this->client, this->robot_ids.cbegin()};}
                 auto   end() const -> iterator {return {this->client, this->robot_ids.cend()  };}
+                auto size() const {return this->robot_ids.size();}
             };
 
             return Range{
