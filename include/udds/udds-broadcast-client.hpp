@@ -192,7 +192,7 @@ namespace shynur::udds {
                             );
 
                             for (auto& option : options) {
-                                if (const auto param = "--robot_id="s; option.starts_with(param)) {
+                                if (const auto param = "--robot_id="s; option.find(param) == 0) {
                                     auto robot_id_pattern = ""s;
                                     for (auto c : option.substr(param.length()))
                                         robot_id_pattern += "["s + c +']';
@@ -288,9 +288,11 @@ namespace shynur::udds {
         /**
          * @brief 获取所有已接收的消息.
          *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
+         *        用 `auto r = received_from(); r.size()` 获取大小.
+         * @warning 不要使用任何没有 documented API.
          */
         auto received_from() {
-            class Range {
+            struct Range {
                 Broadcast_Client& client;
                 const std::vector<std::string> robot_ids;
 
@@ -359,7 +361,6 @@ namespace shynur::udds {
                     }
                 };
 
-              public:
                 auto begin() const -> iterator {return {this->client, this->robot_ids.cbegin()};}
                 auto   end() const -> iterator {return {this->client, this->robot_ids.cend()  };}
                 auto size() const {return this->robot_ids.size();}
