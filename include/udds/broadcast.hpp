@@ -184,21 +184,20 @@ namespace shynur::udds::broadcast {
             if (std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id))
                 return 0.0;
 
-            std::shared_lock{this->packs_mutex};
             std::cerr << __func__ + ": computing clock offset...\n"s;
+            const auto _ = std::shared_lock{this->packs_mutex};
+            for (const auto& pack : this->packs.find(robot_id)->second)
+                std::clog << std::format(
+                    "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
+                    pack.latency(), pack.received_timestamp() - pack.send_timestamp()
+                ) << std::flush;
             return std::transform_reduce(
-                #if __GNUG__ >= 16
-                    std::execution::par_unseq,
-                #endif
+                std::execution::par_unseq,
                 std::cbegin(this->packs.find(robot_id)->second),
                 std::cend(this->packs.find(robot_id)->second),
                 0.0,
                 std::plus{},
                 [](const UddsClkSyncPackProto& pack) {
-                    std::clog << std::format(
-                        "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
-                        pack.latency(), pack.received_timestamp() - pack.send_timestamp()
-                    ) << std::flush;
                     return (
                         pack.latency() - (pack.received_timestamp() - pack.send_timestamp())
                     ) / 2;
