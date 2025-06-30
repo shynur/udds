@@ -185,7 +185,7 @@ namespace shynur::udds::broadcast {
                 return 0.0;
 
             std::cerr << __func__ + ": computing clock offset...\n"s;
-            const auto _ = std::shared_lock{this->packs_mutex};
+            auto _ = std::shared_lock{this->packs_mutex};
             for (const auto& pack : this->packs.find(robot_id)->second)
                 std::clog << std::format(
                     "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
@@ -232,7 +232,7 @@ namespace shynur::udds::broadcast {
                             "Clock sync pack returned from {}\n",
                             pack.sender()
                         ) << std::flush;
-                        const auto _ = std::unique_lock{this->packs_mutex};
+                        auto _ = std::unique_lock{this->packs_mutex};
                         this->packs[pack.sender()].push_back(std::move(pack));
                     } else
                         std::thread{
@@ -263,7 +263,7 @@ namespace shynur::udds::broadcast {
             static auto repliers_mutex = std::shared_mutex{};
 
             if (std::shared_lock{repliers_mutex}, !replier_for.contains(sender)) {
-                if (const auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender))
+                if (auto _ = std::unique_lock{repliers_mutex}; !replier_for.contains(sender))
                     replier_for[sender].reset(
                         new decltype(replier_for)::mapped_type::element_type{
                             this->DOMAIN_ID,
@@ -279,7 +279,7 @@ namespace shynur::udds::broadcast {
             }
 
             {
-                const auto _ = std::shared_lock{repliers_mutex};
+                auto _ = std::shared_lock{repliers_mutex};
                 std::clog << std::format(
                     "Replying clock sync pack to {}...\n",
                     sender

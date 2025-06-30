@@ -177,6 +177,7 @@ int main(const int argc, const char *const argv[]) {
             std::future<double> clock_offset;
             if (message->robot_id() != arg_parser.get_options().robot_id)
                 clock_offset = std::async(
+                    std::launch::async,
                     [&] {return shynur::udds::broadcast::clock_offset_of.ns(robot_id);}
                 );
 
