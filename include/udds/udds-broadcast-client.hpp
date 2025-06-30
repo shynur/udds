@@ -191,13 +191,18 @@ namespace shynur::udds {
                                         for (auto c : option.substr(param.length()))
                                             robot_id_pattern += "["s + c +']';
                                         std::system(
-                                            (
-                                                "kill -2 `ps -A -o pid=,args= "
-                                                "| grep '^[[:blank:]]*[[:digit:]]\\+[[:blank:]]\\+"s
-                                                + cli_program + "\\([[:blank:]]\\+.\\+\\)*[[:blank:]]\\+"
-                                                "--robot_id="s + robot_id_pattern + "\\([[:blank:]]\\+\\|$\\)' "
-                                                "| awk '{print $1}'`"
-                                            ).c_str()
+                                            [&] {
+                                                const auto kill_cmd
+                                                    = "kill -2 `"
+                                                      + "ps -A -o pid=,args= "s
+                                                      + " | " + ("grep '^[[:blank:]]*[[:digit:]]\\+[[:blank:]]\\+"s
+                                                                 + cli_program + "\\([[:blank:]]\\+.\\+\\)*[[:blank:]]\\+"
+                                                                 + "--robot_id=" + robot_id_pattern + "\\([[:blank:]]\\+\\|$\\)' ")
+                                                      + " | " + "awk '{print $1}'"
+                                                      + "`";
+                                                std::clog << "杀死旧的同名参与者的 udds 进程: " + kill_cmd << std::flush;
+                                                return kill_cmd;
+                                            }().c_str()
                                         );
                                     }
                                     cmd += option + ' ';
@@ -206,7 +211,7 @@ namespace shynur::udds {
                                 return cmd;
                             }() + ' '
                             #ifdef SHYNUR_UDDS_USED_BY_SEER_RBK
-                                + "2>/tmp/udds-rbk-log.txt "
+                                + "2>>/tmp/udds-rbk-log.txt "
                             #endif
                             + " # called by " + __FILE__
                         ).c_str(),
