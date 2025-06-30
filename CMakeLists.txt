@@ -31,6 +31,7 @@ add_compile_options(
 )
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+add_compile_options("$<$<CONFIG:Release>:-g0>")
 add_compile_options("$<$<CONFIG:Debug>:-O0>" "$<$<CONFIG:Debug>:-g3>"
     "$<$<CONFIG:Debug>:-ggdb>"
     "$<$<CONFIG:Debug>:-gpubnames>"
