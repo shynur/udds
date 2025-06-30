@@ -163,7 +163,8 @@ namespace shynur::udds::broadcast {
          * @warning 如果校对失败则返回 0.
          */
         auto ns(const std::string& robot_id) const {
-            std::cerr << __func__ + ": check if called first time with given arg...\n"s;
+            std::clog << __func__ + ": check if called first time with given arg...\n"s
+                      << std::flush;
             if (
                 static auto robots_passed_before = std::unordered_set<std::string>{};
                 !robots_passed_before.contains(robot_id)
@@ -180,19 +181,23 @@ namespace shynur::udds::broadcast {
                 );
             }
 
-            std::cerr << __func__ + ": check whether 校对完成...\n"s;
             if (std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id))
                 return 0.0;
 
-            std::cerr << __func__ + ": computing clock offset...\n"s;
+            std::clog << __func__ + ": computing clock offset...\n"s << std::flush;
             auto _ = std::shared_lock{this->packs_mutex};
             for (const auto& pack : this->packs.find(robot_id)->second)
                 std::clog << std::format(
                     "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
                     pack.latency(), pack.received_timestamp() - pack.send_timestamp()
-                ) << std::flush;
+                );
+            std::clog << "参与计算的 UddsClkSyncPack 数量: " + std::to_string(
+                std::size(this->packs.find(robot_id)->second)
+            ) + '\n' << std::flush;
             return std::transform_reduce(
-                std::execution::par_unseq,
+                #if __GNUG__ >= 16  // 自带旧版 G++ 的平台上的 libtbb 似乎有 bug.
+                    std::execution::par_unseq,
+                #endif
                 std::cbegin(this->packs.find(robot_id)->second),
                 std::cend(this->packs.find(robot_id)->second),
                 0.0,
