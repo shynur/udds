@@ -29,7 +29,7 @@ cd `dirname $0`/../bin
 if [ -f easily-send-receive ]; then
     rm -f /mnt/shared-thru-vbox/easily-send-receive
     cp easily-send-receive /mnt/shared-thru-vbox/
-    mv /mnt/shared-thru-vbox/easily-send-receive{,.debug.x64-ubuntu_1804_2004.elf}
+    mv /mnt/shared-thru-vbox/easily-send-receive{,.debugORrelease.x64-ubuntuVERSION.elf}
 else
     echo '没有编译 easily-send-receive' >&2
     exit 1
