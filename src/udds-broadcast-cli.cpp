@@ -174,18 +174,11 @@ int main(const int argc, const char *const argv[]) {
 
             const auto message = shynur::udds::broadcast::received_from[robot_id];
 
-            if (message->robot_id() != arg_parser.get_options().robot_id) {
-                std::clog << '\n' + std::format(
-                    "[latency] from:{} to:{} send:{} recv:{} {}",
-                    message->robot_id(),
-                    arg_parser.get_options().robot_id,
-                    message->send_timestamp_ns() / 1000'000,
-                    message->received_timestamp_ns() / 1000'000,
-                    (message->received_timestamp_ns()
-                        - (message->send_timestamp_ns() - shynur::udds::broadcast::clock_offset_of.ns(robot_id))
-                    ) / 1000'000
-                ) + '\n';
-            }
+            std::future<double> clock_offset;
+            if (message->robot_id() != arg_parser.get_options().robot_id)
+                clock_offset = std::async(
+                    [&] {return shynur::udds::broadcast::clock_offset_of.ns(robot_id);}
+                );
 
             std::cout << std::format(
                 "send_timestamp_ns {}\n"
@@ -209,6 +202,18 @@ int main(const int argc, const char *const argv[]) {
                 "刚才查询的消息 len(json)={}\n",
                 message->json().length()
             );
+            if (message->robot_id() != arg_parser.get_options().robot_id)
+                std::clog << std::format(
+                    "\n[latency] from:{} to:{} send:{} recv:{} {}ms\n",
+                    message->robot_id(),
+                    arg_parser.get_options().robot_id,
+                    message->send_timestamp_ns() / 1000'000,
+                    message->received_timestamp_ns() / 1000'000,
+                    (
+                        message->received_timestamp_ns()
+                        - (message->send_timestamp_ns() - clock_offset.get())
+                    ) / 1000'000
+                );
         } else if (fn == "received_from.keys") {
             std::cout << std::size(shynur::udds::broadcast::received_from)
                       << '\n';
