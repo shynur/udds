@@ -175,8 +175,9 @@ int main(const int argc, const char *const argv[]) {
             const auto message = shynur::udds::broadcast::received_from[robot_id];
 
             std::clog << '\n' + std::format(
-                "[latency] from:{} send:{} recv:{} {}",
+                "[latency] from:{} to:{} send:{} recv:{} {}",
                 message->robot_id(),
+                arg_parser.get_options().robot_id,
                 message->send_timestamp_ns() / 1000'000,
                 message->received_timestamp_ns() / 1000'000,
                 (message->received_timestamp_ns()
