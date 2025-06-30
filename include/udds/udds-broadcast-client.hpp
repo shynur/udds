@@ -203,7 +203,7 @@ namespace shynur::udds {
                                                 std::clog << "杀死旧的同名参与者的 udds 进程: " + kill_cmd << std::flush;
                                                 return kill_cmd;
                                             }().c_str()
-                                        );
+                                        );  // 如果不存在同名进程, 该调用返回 非0, 并且 sh 会有 stderr 输出.  这个无所谓的.
                                     }
                                     cmd += option + ' ';
                                 }
