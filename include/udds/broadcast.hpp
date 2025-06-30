@@ -163,6 +163,7 @@ namespace shynur::udds::broadcast {
          * @warning 如果校对失败则返回 0.
          */
         auto ns(const std::string& robot_id) const {
+            std::cerr << __func__ + ": check if called first time with given arg...\n"s;
             if (
                 static auto robots_passed_before = std::unordered_set<std::string>{};
                 !robots_passed_before.contains(robot_id)
@@ -179,12 +180,16 @@ namespace shynur::udds::broadcast {
                 );
             }
 
+            std::cerr << __func__ + ": check whether 校对完成...\n"s;
             if (std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id))
                 return 0.0;
 
             std::shared_lock{this->packs_mutex};
+            std::cerr << __func__ + ": computing clock offset...\n"s;
             return std::transform_reduce(
-                std::execution::par_unseq,
+                #if __GNUG__ >= 16
+                    std::execution::par_unseq,
+                #endif
                 std::cbegin(this->packs.find(robot_id)->second),
                 std::cend(this->packs.find(robot_id)->second),
                 0.0,
