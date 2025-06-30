@@ -178,45 +178,39 @@ namespace shynur::udds {
 
                     std::clog << "exec "s + cli_program + " ...\n"
                               << std::flush;
-                    ::execvp(
-                        cli_program,
-                        [options=options]() mutable {
-                            auto argv = std::vector<char *>{};
+                    ::execlp(
+                        "bash",
+                        "bash", "-c", (
+                            "exec "s
+                            + [&] {
+                                auto cmd = std::string{cli_program} + ' ';
 
-                            static auto arg0 = cli_program + " (referer=udds-broadcast-client)"s;
-                            argv.push_back(
-                                #if __cplusplus < 201703L
-                                    (char *)
-                                #endif
-                                arg0.data()
-                            );
-
-                            for (auto& option : options) {
-                                if (const auto param = "--robot_id="s; option.find(param) == 0) {
-                                    auto robot_id_pattern = ""s;
-                                    for (auto c : option.substr(param.length()))
-                                        robot_id_pattern += "["s + c +']';
-                                    std::system(
-                                        (
-                                            "kill -2 `ps -A -o pid=,args= "
-                                            "| grep '^[[:blank:]]*[[:digit:]]\\+[[:blank:]]\\+"s
-                                            + cli_program + "\\([[:blank:]]\\+.\\+\\)*[[:blank:]]\\+"
-                                            "--robot_id="s + robot_id_pattern + "\\([[:blank:]]\\+\\|$\\)' "
-                                            "| awk '{print $1}'`"
-                                        ).c_str()
-                                    );
+                                for (auto& option : options) {
+                                    if (const auto param = "--robot_id="s; option.find(param) == 0) {
+                                        auto robot_id_pattern = ""s;
+                                        for (auto c : option.substr(param.length()))
+                                            robot_id_pattern += "["s + c +']';
+                                        std::system(
+                                            (
+                                                "kill -2 `ps -A -o pid=,args= "
+                                                "| grep '^[[:blank:]]*[[:digit:]]\\+[[:blank:]]\\+"s
+                                                + cli_program + "\\([[:blank:]]\\+.\\+\\)*[[:blank:]]\\+"
+                                                "--robot_id="s + robot_id_pattern + "\\([[:blank:]]\\+\\|$\\)' "
+                                                "| awk '{print $1}'`"
+                                            ).c_str()
+                                        );
+                                    }
+                                    cmd += option + ' ';
                                 }
-                                argv.push_back(
-                                    #if __cplusplus < 201703L
-                                        (char *)
-                                    #endif
-                                    option.data()
-                                );
-                            }
 
-                            argv.push_back(nullptr);
-                            return argv;
-                        }().data()
+                                return cmd;
+                            }() + ' '
+                            #ifdef SHYNUR_UDDS_USED_BY_SEER_RBK
+                                + "2>/tmp/udds-rbk-log.txt "
+                            #endif
+                            + " # called by " + __FILE__
+                        ).c_str(),
+                        nullptr
                     );
                     std::cerr << "Failed to exec `"s + cli_program + "'!!!\n";
                     std::_Exit(EXIT_FAILURE);
