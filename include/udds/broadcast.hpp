@@ -179,6 +179,14 @@ namespace shynur::udds::broadcast {
                         )
                     )
                 );
+                for (
+                    auto _ = std::shared_lock{this->packs_mutex};
+                    const auto& pack : this->packs.find(robot_id)->second
+                )
+                    std::clog << std::format(
+                        "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
+                        pack.latency(), pack.received_timestamp() - pack.send_timestamp()
+                    );
             }
 
             if (std::shared_lock{this->packs_mutex}, !this->packs.contains(robot_id))
