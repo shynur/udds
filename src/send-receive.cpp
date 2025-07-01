@@ -56,13 +56,6 @@ int main(int, const char *argv[2]) {
                               << "延迟: " << message->received_timestamp_ns() - message->send_timestamp_ns() << " ns\n"
                               << "JSON: " << message->json() << "\n\n";
                 break;
-            case '6': {
-                std::string robot_id;
-                std::cout << "请输入小车 ID: ";
-                std::cin >> robot_id;
-                std::cout << shynur::udds::broadcast::clock_offset_of.ns(robot_id) << " ns\n";
-                break;
-            }
             default:
                 return {};
         }

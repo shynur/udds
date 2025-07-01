@@ -150,6 +150,19 @@ struct cin_with_check_t {
 int main(const int argc, const char *const argv[]) {
     arg_parser(argc, argv);
 
+    std::cerr << std::format(
+        "\n"
+        "=====================================\n"
+        "== \n"
+        "==  Command Line: {}\n"
+        "== \n"
+        "==     TimeStamp: {}\n"
+        "== \n"
+        "=====================================\n\n",
+        std::string(arg_parser.get_options()),
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())
+    );
+
     if (arg_parser.get_options().development_mode)
         std::clog << "Start initializing broadcast server...\n";
     shynur::udds::broadcast::init(std::string{arg_parser.get_options().robot_id});
@@ -174,13 +187,6 @@ int main(const int argc, const char *const argv[]) {
 
             const auto message = shynur::udds::broadcast::received_from[robot_id];
 
-            std::future<double> clock_offset;
-            if (message->robot_id() != arg_parser.get_options().robot_id)
-                clock_offset = std::async(
-                    std::launch::async,
-                    [&] {return shynur::udds::broadcast::clock_offset_of.ns(robot_id);}
-                );
-
             std::cout << std::format(
                 "send_timestamp_ns {}\n"
                 "received_timestamp_ns {}\n"
@@ -203,18 +209,6 @@ int main(const int argc, const char *const argv[]) {
                 "刚才查询的消息 len(json)={}\n",
                 message->json().length()
             );
-            if (message->robot_id() != arg_parser.get_options().robot_id)
-                std::clog << std::format(
-                    "\n[latency] from:{} to:{} send:{} recv:{} {}ms\n",
-                    message->robot_id(),
-                    arg_parser.get_options().robot_id,
-                    message->send_timestamp_ns() / 1000'000,
-                    message->received_timestamp_ns() / 1000'000,
-                    (
-                        message->received_timestamp_ns()
-                        - (message->send_timestamp_ns() - clock_offset.get())
-                    ) / 1000'000
-                );
         } else if (fn == "received_from.keys") {
             std::cout << std::size(shynur::udds::broadcast::received_from)
                       << '\n';
@@ -282,12 +276,6 @@ int main(const int argc, const char *const argv[]) {
             }
 
             shynur::udds::broadcast::send(message);
-        } else if (fn == "clock_offset_of.ns") {
-            std::string robot_id;
-            cin_with_check >> robot_id;  // 假设 robot_id 中没有空白字符.
-
-            std::cout << shynur::udds::broadcast::clock_offset_of.ns(robot_id)
-                      << '\n';
         } else
             throw std::runtime_error{
                 std::format("未知指令: {}", fn)

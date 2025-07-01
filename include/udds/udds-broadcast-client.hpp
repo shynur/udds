@@ -285,19 +285,6 @@ namespace shynur::udds {
         }
 
         /**
-         * @brief 获取 ROBOT_ID 车辆的时钟 减去 自身时钟 的 值.
-         * @note 只能查询 **向本机发送过消息的小车** 的时钟.
-         *       该值可能是变化的, 如果在校对时间的过程中调用该函数.
-         * @warning 如果校对失败则返回 0.
-         */
-        auto clock_offset_of(const std::string& robot_id) {
-            this->cli_io << "clock_offset_of.ns " << robot_id << std::endl;
-            std::uint64_t offset_ns;
-            this->cli_io >> offset_ns;
-            return std::chrono::nanoseconds{offset_ns};
-        }
-
-        /**
          * @brief 获取所有已接收的消息.
          *        通过 `for (auto [robot_id, message] : received_from()) {}` 遍历.
          *        用 `auto r = received_from(); r.size()` 获取大小.
