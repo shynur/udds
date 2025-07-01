@@ -185,16 +185,7 @@ namespace shynur::udds::broadcast {
                 return 0.0;
 
             std::clog << __func__ + ": computing clock offset...\n"s << std::flush;
-            auto _ = std::shared_lock{this->packs_mutex};
-            for (const auto& pack : this->packs.find(robot_id)->second)
-                std::clog << std::format(
-                    "ClkSyncPack {{\"my latency\":{},\t\"its latency\":{}}}\n",
-                    pack.latency(), pack.received_timestamp() - pack.send_timestamp()
-                );
-            std::clog << "参与计算的 UddsClkSyncPack 数量: " + std::to_string(
-                std::size(this->packs.find(robot_id)->second)
-            ) + '\n' << std::flush;
-            return std::transform_reduce(
+            return std::shared_lock{this->packs_mutex}, std::transform_reduce(
                 #if __GNUG__ >= 16  // 自带旧版 G++ 的平台上的 libtbb 似乎有 bug.
                     std::execution::par_unseq,
                 #endif
