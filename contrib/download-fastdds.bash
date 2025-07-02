@@ -59,4 +59,7 @@ if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
         exit 1
     fi
 fi
-sudo -E ./install.sh --build-cores `nproc` --no-security
+sudo -E ./install.sh  \
+    --build-cores `nproc`  \
+    --no-security  \
+    `#--install-prefix /home/shynur/.local/`

@@ -8,9 +8,7 @@ make clean
 
 clear
 
-CC='clang-20 --gcc-install-dir=/usr/local/lib/gcc/x86_64-pc-linux-gnu/15.1.0'  \
-CXX='clang++-20 --gcc-install-dir=/usr/local/lib/gcc/x86_64-pc-linux-gnu/15.1.0'  \
-CFLAGS= CXXFLAGS= make
+CC=g++-15 CXX=g++-15 CFLAGS= CXXFLAGS= make
 
 make install
 
