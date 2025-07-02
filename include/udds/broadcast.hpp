@@ -3,17 +3,10 @@
 #include <bits/stdc++.h>
 #include <execution>
 #include "./udds.hpp"
-#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
-    #include "UddsJsonProto.hpp"
-    #include "UddsJsonProtoPubSubTypes.hpp"
-    #include "UddsClkSyncPackProto.hpp"
-    #include "UddsClkSyncPackProtoPubSubTypes.hpp"
-#else
-    #include "../../protos/UddsJsonProto.hpp"
-    #include "../../protos/UddsJsonProtoPubSubTypes.hpp"
-    #include "../../protos/UddsClkSyncPackProto.hpp"
-    #include "../../protos/UddsClkSyncPackProtoPubSubTypes.hpp"
-#endif
+#include "../../protos/UddsJsonProto.hpp"
+#include "../../protos/UddsJsonProtoPubSubTypes.hpp"
+#include "../../protos/UddsClkSyncPackProto.hpp"
+#include "../../protos/UddsClkSyncPackProtoPubSubTypes.hpp"
 
 namespace shynur::udds::broadcast {
 
