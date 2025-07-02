@@ -1,4 +1,31 @@
-# udds::broadcast API 参考
+# `udds::broadcast::Broadcast_Client` API 参考
+
+> ```c++
+> #include "udds-broadcast-client.hpp"
+> ```
+
+## 发布
+
+```c++
+rbk::udds::Broadcast_Client c{"Name", 1};
+//                        ^^^^ 必须保证每个活跃的对象的 Name 都不同.
+auto msg = rbk::udds::UddsJsonStruct{};
+msg.json = "[1,2,3]";  // 设置消息内容.  未设置的字段使用 0 值.
+c.send(msg);
+```
+
+## 订阅
+
+```c++
+std::cout << "此时此刻有 " << std::size(c.received_from()) << " 个"
+          << "来自不同小车的消息.\n";
+
+for (auto [car, msg] : c.received_from()) {
+    /* ... */
+}
+```
+
+# `udds::broadcast` API 参考 (使用 `udds-broadcast-client.hpp` 头文件集成 udds 则无需阅读本章)
 
 > ```c++
 > #include "broadcast.hpp"
