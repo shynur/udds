@@ -141,8 +141,7 @@ namespace shynur::udds {
                 int fd[2];
                 ::pipe(fd);
                 std::clog << "to_cli: "s + std::to_string(fd[0])
-                             + " <- " + std::to_string(fd[1]) + '\n'
-                          << std::flush;
+                             + " <- " + std::to_string(fd[1]) + '\n';
                 return {fd[0], fd[1]};
             }()
         }, from_cli{
@@ -166,12 +165,11 @@ namespace shynur::udds {
                         )
                     );
 
-                std::clog << "Forking...\n" << std::flush;
+                std::clog << "Forking...\n";
                 const auto cli_pid = ::fork();
-                std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n'
-                          << std::flush;
+                std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n';
 
-                if (cli_pid == 0) {
+                if (std::clog << std::flush; cli_pid == 0) {
                     this->close_my_fd();
                     ::dup2(  this->to_cli[0], 0), ::close(  this->to_cli[0]);
                     ::dup2(this->from_cli[1], 1), ::close(this->from_cli[1]);
