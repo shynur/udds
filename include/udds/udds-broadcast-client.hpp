@@ -165,11 +165,10 @@ namespace shynur::udds {
                         )
                     );
 
-                std::clog << "Forking...\n";
+                std::clog << "Forking...\n" << std::flush;
                 const auto cli_pid = ::fork();
-                std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n';
 
-                if (std::clog << std::flush; cli_pid == 0) {
+                if (cli_pid == 0) {
                     this->close_my_fd();
                     ::dup2(  this->to_cli[0], 0), ::close(  this->to_cli[0]);
                     ::dup2(this->from_cli[1], 1), ::close(this->from_cli[1]);
@@ -218,7 +217,9 @@ namespace shynur::udds {
                     );
                     std::cerr << "Failed to exec `"s + cli_program + "'!!!\n";
                     std::_Exit(EXIT_FAILURE);
-                }
+                } else
+                    std::clog << "Forked, cli_pid=" + std::to_string(cli_pid) + '\n'
+                              << std::flush;
 
                 ::close(this->to_cli[0]), ::close(this->from_cli[1]);
 
