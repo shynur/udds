@@ -208,7 +208,7 @@ namespace shynur::udds {
                                 return cmd;
                             }() + ' '
                             #ifdef SHYNUR_UDDS_USED_BY_SEER_RBK
-                                + "2>>`shynur_udds_log_d=/var/log/udds/; "
+                                + "2>`shynur_udds_log_d=/var/log/udds/; "
                                   "mkdir -p $shynur_udds_log_d && echo $shynur_udds_log_d`/`date +%s.%6N`.txt "
                             #endif
                             + " # called by " + __FILE__
