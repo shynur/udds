@@ -210,7 +210,7 @@ namespace shynur::udds {
                             }() + ' '
                             #ifdef SHYNUR_UDDS_USED_BY_SEER_RBK
                                 + "2>>`shynur_udds_log_d=/var/log/udds/; "
-                                  "mkdir -p $shynur_udds_log_d && echo $shynur_udds_log_d`/`date +%s`.txt "
+                                  "mkdir -p $shynur_udds_log_d && echo $shynur_udds_log_d`/`date +%s.%6N`.txt "
                             #endif
                             + " # called by " + __FILE__
                         ).c_str(),
@@ -262,7 +262,15 @@ namespace shynur::udds {
             this->close_my_fd();
             ::kill(this->cli_pid, SIGINT);
             ::waitpid(this->cli_pid, nullptr, 0);
-            std::clog << "Udds Server 已经跟随 Client 被关闭.\n" << std::flush;
+            std::clog << "Udds Server 已经跟随 Client 被关闭.\n";
+            std::clog << "压缩 uDDS 日志文件...\n";
+            std::system(
+                "bash -c \""
+                    "cd /var/log/udds; "
+                    "bzip2 --best `ls -- *.txt | awk -F'.txt' '{print $1}' | sort -n | tail -n 1`.txt"
+                "\""
+            );
+            std::clog << "压缩完成.\n" << std::flush;
         }
 
         void close_my_fd() {
