@@ -1,7 +1,5 @@
-#! /bin/bash
-
+#! /bin/bash -e
 # Usage: (cd /tmp; "$0" 3.2.2)
-set -e
 
 SCRIPT_DIR=`cd \`dirname $0\`; pwd`
 
@@ -42,9 +40,7 @@ else
 fi
 patch <$SCRIPT_DIR/fastdds-install.sh.patch
 
-if [ -z $CXX ]; then
-    CXX=c++
-fi
+: ${CC:=cc} ${CXX:=c++}
 if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
     echo "使用了 G++"
     for v in {1..14}; do
@@ -59,7 +55,4 @@ if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
         exit 1
     fi
 fi
-sudo -E ./install.sh  \
-    --build-cores `nproc`  \
-    --no-security  \
-    `#--install-prefix /home/shynur/.local/`
+./install.sh --build-cores 1 --no-security --install-prefix /usr/local

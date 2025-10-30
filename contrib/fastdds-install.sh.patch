@@ -1,6 +1,6 @@
 --- install.sh	2025-04-29 21:09:18.000000000 +0800
 +++ install.sh	2025-06-17 16:08:49.710319638 +0800
-@@ -1,185 +1,194 @@
+@@ -1,137 +1,145 @@
  #!/bin/bash
  # Copyright 2022 Proyectos y Sistemas de Mantenimiento SL (eProsima).
  #
@@ -19,13 +19,13 @@
  # Exit on command failure
  set -e
 
-+export CFLAGS+=' -g0 -O3' CXXFLAGS+=' -g0 -O3'
++: ${CMAKE_BUILD_TYPE:=Debug}
++export CFLAGS='-O0 -g3 '$CFLAGS CXXFLAGS='-O0 -g3 '$CXXFLAGS
 +SHYNUR_CMAKE_VARS='-DSECURITY=OFF -DNO_TLS=ON '
-+SHYNUR_CMAKE_VARS+='-DSHM_TRANSPORT_DEFAULT=OFF '  # 运行时默认不用共享内存通信.
-+SHYNUR_CMAKE_VARS+='-DFASTDDS_STATISTICS=OFF -DSTRICT_REALTIME=OFF -DSQLITE3_SUPPORT=OFF '
-+SHYNUR_CMAKE_VARS+='-DLOG_NO_INFO=ON -DFASTDDS_ENFORCE_LOG_INFO=OFF -DLOG_NO_WARNING=ON '
-+SHYNUR_CMAKE_VARS+='-DLOG_NO_ERROR=ON -DINTERNAL_DEBUG=OFF '
-+SHYNUR_CMAKE_VARS+='-DCMAKE_BUILD_TYPE=Release'
++SHYNUR_CMAKE_VARS+=' -DSHM_TRANSPORT_DEFAULT=ON '  # 默认使用共享内存通信.
++SHYNUR_CMAKE_VARS+=' -DFASTDDS_STATISTICS=OFF -DSTRICT_REALTIME=OFF -DSQLITE3_SUPPORT=OFF '
++SHYNUR_CMAKE_VARS+=' -DLOG_NO_INFO=OFF -DFASTDDS_ENFORCE_LOG_INFO=OFF -DLOG_NO_WARNING=OFF '
++SHYNUR_CMAKE_VARS+=' -DLOG_NO_ERROR=OFF -DINTERNAL_DEBUG=ON '
 +
  print_usage()
  {
@@ -136,9 +136,9 @@
          # Install dependencies
          apt update
          apt install --yes --no-install-recommends \
--            git \
+             git \
              build-essential \
--            cmake \
+             cmake \
              libssl-dev \
              libasio-dev \
              libtinyxml2-dev \
