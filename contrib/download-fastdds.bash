@@ -1,18 +1,19 @@
 #! /bin/bash -e
 # Usage: (cd /tmp; "$0" 3.2.2)
 
-if [ -f /etc/apt/sources.list ]; then
-    sed -i 's/\(archive\|security\)\.ubuntu\.com/mirrors.cloud.aliyuncs.com/g' /etc/apt/sources.list
-fi
-apt update
-apt install -y wget
-
 SCRIPT_DIR=`cd \`dirname $0\`; pwd`
 
 if [ -z $1 ]; then
     echo '需要提供 Fast DDS 的版本号, 建议使用 3.2.2'
     exit 1
 fi
+
+if [ -f /etc/apt/sources.list ]; then
+    sed -i 's/\(archive\|security\)\.ubuntu\.com/mirrors.cloud.aliyuncs.com/g' /etc/apt/sources.list
+fi
+apt update
+apt install -y wget
+
 WHICH_FASTDDS_I_WANNA_DOWNLOAD=eProsima_Fast-DDS-v$1-Linux.tgz
 
 if [ -f fast-dds.installer.d/install.sh ]; then
