@@ -12,7 +12,7 @@
  
 -# Exit on command failure
 -set -e
-+: ${CMAKE_BUILD_TYPE:=Debug}
++:
 +export CFLAGS='-O0 -g3 '$CFLAGS CXXFLAGS='-O0 -g3 '$CXXFLAGS
 +SHYNUR_CMAKE_VARS='-DSECURITY=OFF -DNO_TLS=ON '
 +SHYNUR_CMAKE_VARS+=' -DSHM_TRANSPORT_DEFAULT=ON '  # 默认使用共享内存通信.
