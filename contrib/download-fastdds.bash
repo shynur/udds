@@ -14,6 +14,10 @@ fi
 apt update
 apt install -y wget
 
+wget -O /tmp/cmake-installer.sh https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-$HOSTTYPE.sh
+chmod +x /tmp/cmake-installer.sh
+/tmp/cmake-installer.sh --prefix=/usr/local --exclude-subdir
+
 WHICH_FASTDDS_I_WANNA_DOWNLOAD=eProsima_Fast-DDS-v$1-Linux.tgz
 
 if [ -f fast-dds.installer.d/install.sh ]; then
