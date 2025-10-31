@@ -14,9 +14,11 @@ fi
 apt update
 apt install -y wget patch
 
-wget -O /tmp/cmake-installer.sh https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-$HOSTTYPE.sh
-chmod +x /tmp/cmake-installer.sh
-/tmp/cmake-installer.sh --prefix=/usr/local --exclude-subdir
+if ! type cmake || [ 3.31 = `cmake --version | head -n 1 | awk '{print $3"\n3.31"}' | sort -V -r | head -n 1` ]; then
+    wget -O /tmp/cmake-installer.sh https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-$HOSTTYPE.sh
+    chmod +x /tmp/cmake-installer.sh
+    /tmp/cmake-installer.sh --prefix=/usr/local --exclude-subdir
+fi
 
 WHICH_FASTDDS_I_WANNA_DOWNLOAD=eProsima_Fast-DDS-v$1-Linux.tgz
 
