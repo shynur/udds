@@ -18,7 +18,7 @@ else
     (
         cd fast-dds.installer.d
         wget https://www.eprosima.com/component/ars/item/$WHICH_FASTDDS_I_WANNA_DOWNLOAD
-        tar -xzf *
+        tar xzf $WHICH_FASTDDS_I_WANNA_DOWNLOAD
         rm $WHICH_FASTDDS_I_WANNA_DOWNLOAD
     )
 fi
@@ -55,4 +55,6 @@ if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
         exit 1
     fi
 fi
-./install.sh --build-cores 1 --no-security --install-prefix /usr/local
+
+chmod +x install.sh
+./install.sh --build-cores 1 --no-security --no-static-libs --install-prefix /usr/local
