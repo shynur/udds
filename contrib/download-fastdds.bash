@@ -12,7 +12,7 @@ if [ -f /etc/apt/sources.list ]; then
     sed -i 's/\(archive\|security\)\.ubuntu\.com/mirrors.cloud.aliyuncs.com/g' /etc/apt/sources.list
 fi
 apt update
-apt install -y wget
+apt install -y wget patch
 
 wget -O /tmp/cmake-installer.sh https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-$HOSTTYPE.sh
 chmod +x /tmp/cmake-installer.sh
