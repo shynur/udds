@@ -1,5 +1,5 @@
 --- fastdds-install.sh	2025-10-31 09:48:26.677708725 +0800
-+++ fastdds-install2.sh	2025-10-31 10:00:42.659199378 +0800
++++ fastdds-install2.sh	2025-10-31 10:21:42.443081398 +0800
 @@ -1,4 +1,4 @@
 -#!/bin/bash
 +#!/bin/bash -e
@@ -22,13 +22,12 @@
  
  print_usage()
  {
-@@ -122,25 +127,28 @@
+@@ -122,25 +127,25 @@
      # Determine if apt-get is available
      if [[ ${INSTALL_DEPENDENCIES} == "TRUE" ]]
      then
-+	sed -i 's/\(archive\|security\)\.ubuntu\.com/mirrors.cloud.aliyuncs.com/g' /etc/apt/sources.list
-         # Install dependencies
-         apt update
+-        # Install dependencies
+-        apt update
          apt install --yes --no-install-recommends \
              git \
              build-essential \
@@ -53,7 +52,7 @@
          ${SCRIPT_DIR}/src/foonathan_memory_vendor
      cmake --build . --target install -j ${BUILD_CORES}
      cd -
-@@ -152,6 +160,7 @@
+@@ -152,6 +157,7 @@
          cd ${SCRIPT_DIR}/build/fastcdr
          cmake \
              -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
@@ -61,7 +60,7 @@
              -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} \
              ${SCRIPT_DIR}/src/fastcdr
          cmake --build . --target install -j ${BUILD_CORES}
-@@ -164,6 +173,7 @@
+@@ -164,6 +170,7 @@
              -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX} \
              -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
              -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} \
