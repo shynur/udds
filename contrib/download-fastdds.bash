@@ -1,6 +1,8 @@
 #! /bin/bash -e
 # Usage: (cd /tmp; "$0" 3.2.2)
 
+shopt -s globstar
+
 SCRIPT_DIR=`cd \`dirname $0\`; pwd`
 
 if [ -z $1 ]; then
@@ -45,6 +47,9 @@ if [ "$REPLY" != y ]; then
 fi
 
 cd fast-dds.installer.d
+for f in ./**/*.h ./**/*.c ./**/*.hpp ./**/*.cpp ./**/*.cxx ./**/*.cc; do
+    sed -i s/asio::io_service/asio::io_context/g $f
+done
 if [ -f install.sh.bak ]; then
     rm install.sh
     cp install.sh{.bak,}
