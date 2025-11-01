@@ -21,12 +21,27 @@ namespace shynur::udds {
      * @tparam proto_name_cstr 返回 proto_t 的类型名, 以字符串的形式.
      */
     template <
-        std::regular proto_t,
-        std::derived_from<::eprosima::fastdds::dds::TopicDataType> proto_pub_sub_t,
-        std::regular_invocable<> auto proto_name_cstr
-    > requires requires {
-        { proto_name_cstr() } -> std::same_as<const char *>;
-    }
+        #ifdef __cpp_lib_concepts
+            std::regular
+        #else
+            typename
+        #endif
+                     proto_t,
+        #ifdef __cpp_lib_concepts
+            std::derived_from<::eprosima::fastdds::dds::TopicDataType>
+        #else
+            typename
+        #endif
+                     proto_pub_sub_t
+        #ifndef SEER_ROBOTICS_UDDS
+            , std::regular_invocable<> auto proto_name_cstr
+        #endif
+    >
+    #ifndef SEER_ROBOTICS_UDDS
+        requires requires {
+            { proto_name_cstr() } -> std::same_as<const char *>;
+        }
+    #endif
     class Publisher {
         ::eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
         ::eprosima::fastdds::dds::Publisher *publisher = nullptr;
@@ -34,7 +49,7 @@ namespace shynur::udds {
         ::eprosima::fastdds::dds::DataWriter *writer = nullptr;
         ::eprosima::fastdds::dds::TypeSupport type;
         struct: ::eprosima::fastdds::dds::DataWriterListener {
-            std::atomic_int matched = 0;  // TODO: 可以改成 uint 吗? 进一步地, uchar 应该绰绰有余了.
+            std::atomic_int matched{0};  // TODO: 可以改成 uint 吗? 进一步地, uchar 应该绰绰有余了.
 
             void on_publication_matched(
                 ::eprosima::fastdds::dds::DataWriter *,
@@ -49,13 +64,10 @@ namespace shynur::udds {
                         // Publisher unmatched.
                         this->matched = info.total_count;
                         break;
-                    default:  // TODO: 优化错误处理
-                        std::cerr << std::format(
-                            "info.current_count_change={} is not a valid value for "
-                            "PublicationMatchedStatus current count change.",
-                            info.current_count_change
-                        ) << '\n';
-                        assert(false);
+                    default:
+                        std::cerr <<
+                            "info.current_count_change=" + std::to_string(info.current_count_change) + "is not a valid value for "
+                            "PublicationMatchedStatus current count change.\n";
                 }
             }
         } writer_listener;
@@ -89,7 +101,12 @@ namespace shynur::udds {
             this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
-                    proto_name_cstr(),
+		    #ifndef SEER_ROBOTICS_UDDS
+                        proto_name_cstr()
+		    #else
+		        topic_name.c_str()
+		    #endif
+		                          ,
                     [] {
                         auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
                         qos.reliability().max_blocking_time = 1.0;  // 可靠传输需要允许阻塞比较长的时间.
@@ -115,19 +132,11 @@ namespace shynur::udds {
             if (!this->writer)
                 goto failed_init;
 
-            std::clog << std::format(
-                R"({{"role":"Publisher","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
-                "\n",
-                domain_id, participant_name, topic_name
-            ) << std::flush;
-
             if (false) {
                 failed_init:
                     [[unlikely]];
                     throw std::runtime_error{  // TODO: 更合适的错误类型
-                        std::format(
-                            "Failed to initialize Publisher"
-                        )  // TODO: 更详细的错误信息
+                        "Failed to initialize Publisher"  // TODO: 更详细的错误信息
                     };
             }
         }
@@ -165,12 +174,27 @@ namespace shynur::udds {
      * @tparam proto_name_cstr proto_t 的类型名, 以字符串的形式.
      */
     template <
-        std::regular proto_t,
-        std::derived_from<::eprosima::fastdds::dds::TopicDataType> proto_pub_sub_t,
-        std::regular_invocable<> auto proto_name_cstr
-    > requires requires {
-        { proto_name_cstr() } -> std::same_as<const char *>;
-    }
+        #ifdef __cpp_lib_concepts
+            std::regular
+        #else
+            typename
+        #endif
+                     proto_t,
+        #ifdef __cpp_lib_concepts
+            std::derived_from<::eprosima::fastdds::dds::TopicDataType>
+        #else
+            typename
+        #endif
+                     proto_pub_sub_t
+        #ifndef SEER_ROBOTICS_UDDS
+            , std::regular_invocable<> auto proto_name_cstr
+        #endif
+    >
+    #ifndef SEER_ROBOTICS_UDDS
+        requires requires {
+            { proto_name_cstr() } -> std::same_as<const char *>;
+        }
+    #endif
     class Subscriber {
         ::eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
         ::eprosima::fastdds::dds::Subscriber *subscriber = nullptr;
@@ -178,10 +202,20 @@ namespace shynur::udds {
         ::eprosima::fastdds::dds::Topic *topic = nullptr;
         ::eprosima::fastdds::dds::TypeSupport type;
         struct ReaderListener: ::eprosima::fastdds::dds::DataReaderListener {
-            std::move_only_function<
+	    #ifdef __cpp_lib_move_only_function
+                std::move_only_function
+	    #else
+		std::function
+	    #endif
+		             <
                 std::unique_ptr<proto_t, std::function<void(proto_t *)>>()
             > message_locator;
-            std::move_only_function<void(proto_t&)> message_processor;
+            #ifdef __cpp_lib_move_only_function
+                std::move_only_function
+	    #else
+		std::function
+	    #endif
+		             <void(proto_t&)> message_processor;
 
             ReaderListener(
                 decltype(ReaderListener::message_locator) message_locator,
@@ -201,12 +235,9 @@ namespace shynur::udds {
                         // Subscriber unmatched.
                         break;
                     default:
-                        std::cerr << std::format(
-                            "info.current_count_change={} is not a valid value "
-                            "for SubscriptionMatchedStatus current count change",
-                            info.current_count_change
-                        ) << '\n';
-                        assert(false);
+                        std::cerr <<
+                            "info.current_count_change={" + std::to_string(info.current_count_change) + "} is not a valid value "
+                            "for SubscriptionMatchedStatus current count change.\n";
                 }
             }
             void on_data_available(::eprosima::fastdds::dds::DataReader *const reader) override {
@@ -214,7 +245,7 @@ namespace shynur::udds {
                 auto message = this->message_locator();
 
                 if (
-                    reader->take_next_sample(std::to_address(message), &info)
+                    reader->take_next_sample(&*message, &info)
                     == ::eprosima::fastdds::dds::RETCODE_OK
                 ) [[likely]]
                     if (info.valid_data) [[likely]] {
@@ -240,19 +271,52 @@ namespace shynur::udds {
          * @param message_processor 一个 callback, 接收一个 proto_t 的引用.  每次 reader 接收到消息后
          *                          都会同步调用它.  因此需要保证该 callback 的调用是足够迅速的.
          */
+        #ifndef __cpp_lib_concepts
+            template <typename F>
+        #endif
         Subscriber(
             const std::uint8_t domain_id,
             const std::string participant_name,
             const std::string topic_name,
-            std::invocable<> auto&& message_locator,
-            std::invocable<proto_t&> auto&& message_processor
-        ) requires requires {
-            std::unique_ptr{message_locator()};
-            requires std::is_same_v<proto_t, typename decltype(message_locator())::element_type>;
-        }: type{new proto_pub_sub_t},
+            #ifndef SEER_ROBOTICS_UDDS
+                std::invocable<> auto&& message_locator,
+	    #endif
+            #ifdef __cpp_lib_concepts
+                std::invocable<
+		    #ifndef SEER_ROBOTICS_UDDS
+			proto_t&
+		    #else
+	                std::shared_ptr<proto_t>
+                    #endif
+	        > auto
+            #else
+                F
+	    #endif
+		 && message_processor
+        )
+	#ifndef SEER_ROBOTICS_UDDS
+            requires requires {
+                std::unique_ptr{message_locator()};
+                requires std::is_same_v<proto_t, typename decltype(message_locator())::element_type>;
+            }
+        #endif
+        : type{new proto_pub_sub_t},
            reader_listener{
-            std::forward<decltype(message_locator)>(message_locator),
-            std::forward<decltype(message_processor)>(message_processor)
+	    #ifndef SEER_ROBOTICS_UDDS
+                std::forward<decltype(message_locator)>(message_locator)
+            #else
+                std::make_unique<proto_t>
+            #endif
+                ,
+	    [msg_processor=std::forward<decltype(message_processor)>(message_processor)](proto_t& msg) {
+                msg_processor(
+	            #ifndef SEER_ROBOTICS_UDDS
+                        msg
+                    #else
+		        std::shared_ptr<std::decay_t<decltype(msg)>>{&msg}
+                    #endif
+		);
+	    }
         } {
             this->participant
                 = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
@@ -272,7 +336,12 @@ namespace shynur::udds {
             this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
-                    proto_name_cstr(),
+		    #ifndef SEER_ROBOTICS_UDDS
+                        proto_name_cstr()
+		    #else
+		        topic_name.c_str()
+		    #endif
+		                          ,
                     [] {
                         auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
                         qos.durability().kind  // 订阅该主题后自动获取历史消息.
@@ -302,19 +371,11 @@ namespace shynur::udds {
             if (!this->reader)
                 goto failed_init;
 
-            std::clog << std::format(
-                R"({{"role":"Subscriber","domain_id":"{}","participant_name":"{}","topic_name":"{}"}})"
-                "\n",
-                domain_id, participant_name, topic_name
-            ) << std::flush;
-
             if (false) {
                 failed_init:
                     [[unlikely]];
                     throw std::runtime_error{  // TODO: 更合适的错误类型
-                        std::format(
-                            "Failed to initialize Publisher"
-                        )  // TODO: 更详细的错误信息
+                        "Failed to initialize Publisher"  // TODO: 更详细的错误信息
                     };
             }
         }
@@ -334,8 +395,13 @@ namespace shynur::udds {
     };
 }
 
-#if SHYNUR_UDDS_USED_BY_SEER_RBK == 30408UL
-namespace rbk {
-    namespace udds = shynur::udds;
-}
+#ifdef SEER_ROBOTICS_UDDS
+  #define RBK_UDDS_PUBLISHER(channel, publisher_name, proto_typename)                 \
+              ::shynur::udds::Publisher<proto_typename, proto_typename##PubSubType>{  \
+                  channel, publisher_name, #proto_typename                            \
+              }
+  #define RBK_UDDS_SUBSCRIBER(channel, subscriber_name, proto_typename, callback)      \
+              ::shynur::udds::Subscriber<proto_typename, proto_typename##PubSubType>{  \
+                  channel, subscriber_name, #proto_typename, callback                  \
+              }
 #endif

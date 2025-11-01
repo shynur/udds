@@ -1,4 +1,4 @@
 struct UddsPersonProto {
-  string name;
-  unsigned long age;
+    string name;
+    unsigned long age;
 };

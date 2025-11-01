@@ -9,8 +9,12 @@ if(NOT fastdds_FOUND)
     find_package(fastdds 3 REQUIRED)
 endif()
 
+execute_process(
+    COMMAND bash -c "fastddsgen *.idl"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
 file(GLOB PROTO_SOURCES "*.cxx")
-add_compile_options(-Wpedantic -Wall -W)
+add_compile_options(-std=c++2b -Wpedantic -Wall -W)
 
 add_executable(pub
     pub.cpp
