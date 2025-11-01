@@ -47,7 +47,7 @@ if [ "$REPLY" != y ]; then
 fi
 
 cd fast-dds.installer.d
-for f in ./**/*.h ./**/*.c ./**/*.hpp ./**/*.cpp ./**/*.cxx ./**/*.cc; do
+for f in ./**/*.h ./**/*.c ./**/*.hpp ./**/*.cpp ./**/*.cxx; do
     sed -i s/asio::io_service/asio::io_context/g $f
 done
 if [ -f install.sh.bak ]; then
