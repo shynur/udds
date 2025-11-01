@@ -75,4 +75,4 @@ if $CXX --version | grep 'Free Software Foundation' >/dev/null; then
 fi
 
 chmod +x install.sh
-./install.sh --build-cores 1 --no-security --no-static-libs --install-prefix /usr/local
+./install.sh --build-cores `nproc` --no-security --no-static-libs --install-prefix /usr/local
