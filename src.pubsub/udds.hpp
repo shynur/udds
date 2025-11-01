@@ -1,0 +1,304 @@
+/* source code: <https://github.com/shynur/udds> */
+#pragma once
+#include <bits/stdc++.h>
+#include <fastdds/dds/domain/DomainParticipant.hpp>
+#include <fastdds/dds/domain/DomainParticipantFactory.hpp>
+#include <fastdds/dds/publisher/DataWriter.hpp>
+#include <fastdds/dds/publisher/DataWriterListener.hpp>
+#include <fastdds/dds/publisher/Publisher.hpp>
+#include <fastdds/dds/subscriber/DataReader.hpp>
+#include <fastdds/dds/subscriber/DataReaderListener.hpp>
+#include <fastdds/dds/subscriber/SampleInfo.hpp>
+#include <fastdds/dds/subscriber/Subscriber.hpp>
+#include <fastdds/dds/subscriber/qos/DataReaderQos.hpp>
+#include <fastdds/dds/topic/TypeSupport.hpp>
+using namespace std::literals;
+
+namespace shynur::udds {
+    /**
+     * @tparam proto_t 由 IDL 文件所定义的消息类型 转换为 C++ class 后 的 class 类型.
+     * @tparam proto_pub_sub_t 给 proto_t 加上 'PubSubType' 的后缀而已.
+     */
+    template <
+        typename proto_t,
+        typename proto_pub_sub_t
+    >
+    class Publisher {
+        ::eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
+        ::eprosima::fastdds::dds::Publisher *publisher = nullptr;
+        ::eprosima::fastdds::dds::Topic *topic = nullptr;
+        ::eprosima::fastdds::dds::DataWriter *writer = nullptr;
+        ::eprosima::fastdds::dds::TypeSupport type;
+        struct: ::eprosima::fastdds::dds::DataWriterListener {
+            std::atomic_int matched{0};  // TODO: 可以改成 uint 吗? 进一步地, uchar 应该绰绰有余了.
+
+            void on_publication_matched(
+                ::eprosima::fastdds::dds::DataWriter *,
+                const ::eprosima::fastdds::dds::PublicationMatchedStatus& info
+            ) override {
+                switch (info.current_count_change) {
+                    case 1:
+                        // Publisher matched.
+                        this->matched = info.total_count;
+                        break;
+                    case -1:
+                        // Publisher unmatched.
+                        this->matched = info.total_count;
+                        break;
+                    default:  // TODO: 优化错误处理
+                        std::cerr <<
+                            "info.current_count_change is not a valid value for "
+                            "PublicationMatchedStatus current count change.\n",
+                        assert(false);
+                }
+            }
+        } writer_listener;
+
+      public:
+        /**
+         * @param domain_id 发布订阅的 domain, 同一个 domain 之间的 topic 是可见的.
+         * @param participant_name publisher 的 name.  (看日志的时候有用.)
+         * @param topic_name topic 的 name.  需要和 proto 定义时的类型名字相同.
+         */
+        Publisher(
+            const std::uint8_t domain_id,
+            const std::string participant_name,
+            const std::string topic_name
+        ): type{new proto_pub_sub_t} {
+            this->participant
+                = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+                    ->create_participant(
+                        domain_id,
+                        [&] {
+                            auto qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
+                            qos.name(participant_name.c_str());
+                            return qos;
+                        }()
+                    );
+            if (!this->participant)
+                goto failed_init;
+
+            this->type.register_type(this->participant);
+
+            this->topic
+                = this->participant->create_topic(
+                    topic_name.c_str(),
+                    topic_name.c_str(),
+                    [] {
+                        auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
+                        qos.reliability().max_blocking_time = 1.0;  // 可靠传输需要允许阻塞比较长的时间.
+                        return qos;
+                    }()
+                );
+            if (!this->topic)
+                goto failed_init;
+
+            this->publisher
+                = this->participant->create_publisher(
+                    ::eprosima::fastdds::dds::PUBLISHER_QOS_DEFAULT
+                );
+            if (!this->publisher)
+                goto failed_init;
+
+            this->writer
+                = this->publisher->create_datawriter(
+                    topic,
+                    ::eprosima::fastdds::dds::DATAWRITER_QOS_DEFAULT,
+                    &this->writer_listener
+                );
+            if (!this->writer)
+                goto failed_init;
+
+            if (false) {
+                failed_init:
+                    throw std::runtime_error{  // TODO: 更合适的错误类型
+   		      "Failed to initialize Publisher"
+                        // TODO: 更详细的错误信息
+                    };
+            }
+        }
+        ~Publisher() {
+            if (this->writer)
+                this->publisher->delete_datawriter(this->writer);
+
+            if (this->publisher)
+                this->participant->delete_publisher(this->publisher);
+
+            if (this->topic)
+                this->participant->delete_topic(this->topic);
+
+            ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+            ->delete_participant(this->participant);
+        }
+
+        /**
+         * @brief 如有必要, 则发布消息.
+         *        如果未发现相应的 reader, 则不发布 (因为没有人会接收).
+         * @return 如果真的发布了消息, 则返回 true; 否则返回 false.
+         */
+        auto publish(const proto_t& message) {
+            if (this->writer_listener.matched >= 1) {
+                this->writer->write(&message);
+                return true;
+            } else
+                return false;
+        }
+    };
+
+    /**
+     * @tparam proto_t 由 IDL 文件所定义的消息类型 转换为 C++ class 后 的 class 类型.
+     * @tparam proto_pub_sub_t 给 proto_t 加上 'PubSubType' 的后缀而已.
+     */
+    template <
+        typename proto_t,
+        typename proto_pub_sub_t
+    >
+    class Subscriber {
+        ::eprosima::fastdds::dds::DomainParticipant *participant = nullptr;
+        ::eprosima::fastdds::dds::Subscriber *subscriber = nullptr;
+        ::eprosima::fastdds::dds::DataReader *reader = nullptr;
+        ::eprosima::fastdds::dds::Topic *topic = nullptr;
+        ::eprosima::fastdds::dds::TypeSupport type;
+        struct ReaderListener: ::eprosima::fastdds::dds::DataReaderListener {
+            std::function<
+                std::unique_ptr<proto_t, std::function<void(proto_t *)>>()
+            > message_locator;
+            std::function<void(proto_t&)> message_processor;
+
+            ReaderListener(
+                decltype(ReaderListener::message_locator) message_locator,
+                decltype(ReaderListener::message_processor) message_processor
+            ): message_locator{std::move(message_locator)},
+               message_processor{std::move(message_processor)} {}
+
+            void on_subscription_matched(
+                ::eprosima::fastdds::dds::DataReader *,
+                const ::eprosima::fastdds::dds::SubscriptionMatchedStatus& info
+            ) override {
+                switch (info.current_count_change) {
+                    case 1:
+                        // Subscriber matched.
+                        break;
+                    case -1:
+                        // Subscriber unmatched.
+                        break;
+                    default:
+                        std::cerr <<
+                            "info.current_count_change is not a valid value "
+                            "for SubscriptionMatchedStatus current count change.\n";
+                        assert(false);
+                }
+            }
+            void on_data_available(::eprosima::fastdds::dds::DataReader *const reader) override {
+                auto info = ::eprosima::fastdds::dds::SampleInfo{};
+                auto message = this->message_locator();
+
+                if (
+                    reader->take_next_sample(message.operator->(), &info)
+                    == ::eprosima::fastdds::dds::RETCODE_OK
+                )
+                    if (info.valid_data) {
+                        this->message_processor(*message);
+                        message.release();
+                        return;
+                    }
+                std::cerr << "监听到有数据到来, 但未能成功读取.\n";
+            }
+        } reader_listener;
+
+      public:
+        /**
+         * @param domain_id 发布订阅的 domain, 同一个 domain 之间的 topic 是可见的.
+         * @param participant_name subscriber 的 name.  (看日志的时候有用.)
+         * @param topic_name topic 的 name.  需要和 proto 定义时的类型名字相同.
+         * @param message_processor 一个 callback, 接收一个 proto_t 的引用.  每次 reader 接收到消息后
+         *                          都会同步调用它.  因此需要保证该 callback 的调用是足够迅速的.
+         */
+        template <typename T>
+        Subscriber(
+            const std::uint8_t domain_id,
+            const std::string participant_name,
+            const std::string topic_name,
+            T&& message_processor
+        ): type{new proto_pub_sub_t},
+           reader_listener{
+            [] { return std::make_unique<proto_t>(); },
+            [msg_proc=std::forward<decltype(message_processor)>(message_processor)](proto_t& msg) {
+	        msg_proc(
+		    std::shared_ptr<std::decay_t<decltype(msg)>>{&msg}
+                );
+	    }
+        } {
+            this->participant
+                = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+                    ->create_participant(
+                        domain_id,
+                        [&] {
+                            auto participant_qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
+                            participant_qos.name(participant_name.c_str());
+                            return participant_qos;
+                        }()
+                    );
+            if (!this->participant)
+                goto failed_init;
+
+            this->type.register_type(this->participant);
+
+            this->topic
+                = this->participant->create_topic(
+                    topic_name.c_str(),
+                    topic_name.c_str(),
+                    [] {
+                        auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
+                        qos.durability().kind  // 订阅该主题后自动获取历史消息.
+                            = ::eprosima::fastdds::dds::DurabilityQosPolicyKind::TRANSIENT_LOCAL_DURABILITY_QOS;
+                        qos.reliability().kind  // 丢失的消息会被重新传输过来.
+                            = ::eprosima::fastdds::dds::ReliabilityQosPolicyKind::RELIABLE_RELIABILITY_QOS;
+                        qos.reliability().max_blocking_time = 1.0;  // 可靠传输需要允许阻塞比较长的时间.
+                        return qos;
+                    }()
+                );
+            if (!this->topic)
+                goto failed_init;
+
+            this->subscriber
+                = this->participant->create_subscriber(
+                    ::eprosima::fastdds::dds::SUBSCRIBER_QOS_DEFAULT
+                );
+            if (!this->subscriber)
+                goto failed_init;
+
+            this->reader
+                = this->subscriber->create_datareader(
+                    this->topic,
+                    ::eprosima::fastdds::dds::DATAREADER_QOS_DEFAULT,
+                    &this->reader_listener
+                );
+            if (!this->reader)
+                goto failed_init;
+
+            if (false) {
+                failed_init:
+                    throw std::runtime_error{  // TODO: 更合适的错误类型
+  		      "Failed to initialize Publisher"
+                    };
+            }
+        }
+        ~Subscriber() {
+            if (this->reader)
+                this->subscriber->delete_datareader(this->reader);
+
+            if (this->topic)
+                this->participant->delete_topic(this->topic);
+
+            if (this->subscriber)
+                this->participant->delete_subscriber(this->subscriber);
+
+            ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
+            ->delete_participant(this->participant);
+        }
+    };
+}
+
+namespace rbk { namespace udds = shynur::udds; }
+#define RBK_UDDS_
