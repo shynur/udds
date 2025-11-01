@@ -1,12 +1,12 @@
 --- install.sh	2025-10-31 09:48:26.677708725 +0800
-+++ install.sh	2025-11-02 04:48:44.788853524 +0800
++++ install.sh	2025-11-02 05:54:43.887844828 +0800
 @@ -1,4 +1,4 @@
 -#!/bin/bash
 +#!/bin/bash -e
  # Copyright 2022 Proyectos y Sistemas de Mantenimiento SL (eProsima).
  #
  # Licensed under the Apache License, Version 2.0 (the "License");
-@@ -13,8 +13,24 @@
+@@ -13,8 +13,25 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
  
@@ -19,6 +19,7 @@
 +SHYNUR_CMAKE_VARS+=' -DFASTDDS_STATISTICS=OFF -DSTRICT_REALTIME=OFF -DSQLITE3_SUPPORT=OFF '
 +SHYNUR_CMAKE_VARS+=' -DLOG_NO_INFO=OFF -DFASTDDS_ENFORCE_LOG_INFO=OFF -DLOG_NO_WARNING=OFF '
 +SHYNUR_CMAKE_VARS+=' -DLOG_NO_ERROR=OFF -DINTERNAL_DEBUG=ON '
++SHYNUR_CMAKE_VARS+=" -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE "
 +if [ 18.04 = `cat /etc/os-release | grep VERSION_ID | awk -F'"' '{print \$2}'` ]; then
 +    (
 +	cd /tmp
@@ -33,7 +34,7 @@
  
  print_usage()
  {
-@@ -122,25 +138,25 @@
+@@ -122,25 +139,25 @@
      # Determine if apt-get is available
      if [[ ${INSTALL_DEPENDENCIES} == "TRUE" ]]
      then
@@ -64,7 +65,7 @@
          ${SCRIPT_DIR}/src/foonathan_memory_vendor
      cmake --build . --target install -j ${BUILD_CORES}
      cd -
-@@ -152,6 +168,7 @@
+@@ -152,6 +169,7 @@
          cd ${SCRIPT_DIR}/build/fastcdr
          cmake \
              -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
@@ -72,7 +73,7 @@
              -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} \
              ${SCRIPT_DIR}/src/fastcdr
          cmake --build . --target install -j ${BUILD_CORES}
-@@ -164,6 +181,7 @@
+@@ -164,6 +182,7 @@
              -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX} \
              -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
              -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} \
