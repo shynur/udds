@@ -1,4 +1,4 @@
-4#define SEER_ROBOTICS_UDDS
+#define SEER_ROBOTICS_UDDS
 #include "../include/udds/udds.hpp"
 
 #include "UddsPersonProtoPubSubTypes.hpp"  // <-- FastDDS 命令行工具自动生成的 proto 头文件.

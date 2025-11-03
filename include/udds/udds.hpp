@@ -171,15 +171,15 @@ namespace shynur::udds {
                     message
 	) {
             if (this->writer_listener.matched >= 1) [[likely]] {
+                #ifdef SEER_ROBOTICS_UDDS
+                    const auto&& msg = message();
+                #endif
                 this->writer->write(
                     &
                     #ifndef SEER_ROBOTICS_UDDS
                      message
                     #else
-                     [&]() mutable -> auto&& {
-                         decltype(auto) msg = message();
-                         return msg;
-                     }()
+                     msg
                     #endif
                 );
                 return true;
