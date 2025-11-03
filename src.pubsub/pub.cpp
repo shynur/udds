@@ -15,10 +15,12 @@ int main(int, const char *const argv[]) {
                 auto person = UddsPersonProto{};
 	        person.name(argv[1]);
 	        person.age(std::rand());
+
+		std::printf("Pub {name: %s, age: %u}\n", person.name().c_str(), person.age());
+
 		return person;
       	    }  // <- 同步调用, 仅在存在相应订阅者的时候才会被调用.
 	);
-	std::printf("Pub {name: %s, age: %u}\n", person.name().c_str(), person.age());
 
 	std::this_thread::sleep_for(2s);
     }
