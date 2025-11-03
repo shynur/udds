@@ -104,7 +104,7 @@ namespace shynur::udds {
                     #ifndef SEER_ROBOTICS_UDDS
                         proto_name_cstr()
 		    #else
-		        topic_name.c_str()
+		        participant_name.c_str()
 		    #endif
 		                          ,
                     [] {
@@ -359,7 +359,7 @@ namespace shynur::udds {
 		    #ifndef SEER_ROBOTICS_UDDS
                         proto_name_cstr()
 		    #else
-		        topic_name.c_str()
+		        participant_name.c_str()
 		    #endif
 		                          ,
                     [] {
@@ -418,11 +418,11 @@ namespace shynur::udds {
 #ifdef SEER_ROBOTICS_UDDS
     #define RBK_UDDS_PUBLISHER(channel, topic_name, proto_typename)                     \
                 ::shynur::udds::Publisher<proto_typename, proto_typename##PubSubType>{  \
-                    channel, "", topic_name                                             \
+                    channel, #proto_typename, topic_name                                \
                 }
     #define RBK_UDDS_SUBSCRIBER(channel, topic_name, proto_typename, callback)           \
                 ::shynur::udds::Subscriber<proto_typename, proto_typename##PubSubType>{  \
-                    channel, "", topic_name, callback                                    \
+                    channel, #proto_typename, topic_name, callback                       \
                 }
 #endif
 
