@@ -49,7 +49,7 @@ namespace shynur::udds {
         ::eprosima::fastdds::dds::DataWriter *writer = nullptr;
         ::eprosima::fastdds::dds::TypeSupport type;
         struct: ::eprosima::fastdds::dds::DataWriterListener {
-            std::atomic_int matched{0};  // TODO: 可以改成 uint 吗? 进一步地, uchar 应该绰绰有余了.
+            std::atomic_uint num_matched{0};
 
             void on_publication_matched(
                 ::eprosima::fastdds::dds::DataWriter *,
@@ -58,11 +58,11 @@ namespace shynur::udds {
                 switch (info.current_count_change) {
                     case 1:
                         // Publisher matched.
-                        this->matched = info.current_count;
+                        this->num_matched = info.current_count;
                         break;
                     case -1:
                         // Publisher unmatched.
-                        this->matched = info.current_count;
+                        this->num_matched = info.current_count;
                         break;
                     default:
                         std::cerr <<
@@ -168,7 +168,7 @@ namespace shynur::udds {
 	    #endif
                     message
 	) {
-            if (this->writer_listener.matched >= 1) [[likely]] {
+            if (this->writer_listener.num_matched >= 1) [[likely]] {
                 #ifdef SEER_ROBOTICS_UDDS
                     const auto&& msg = message();
                 #endif
