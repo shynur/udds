@@ -58,11 +58,11 @@ namespace shynur::udds {
                 switch (info.current_count_change) {
                     case 1:
                         // Publisher matched.
-                        this->matched = info.total_count;
+                        this->matched = info.current_count;
                         break;
                     case -1:
                         // Publisher unmatched.
-                        this->matched = info.total_count;
+                        this->matched = info.current_count;
                         break;
                     default:
                         std::cerr <<
