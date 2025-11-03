@@ -11,7 +11,7 @@ const auto publisher = new RBK_UDDS_PUBLISHER(
 int main(int, const char *const argv[]) {
     while (true) {
 	publisher->publish(
-	    [] {
+	    [&] {
                 auto person = UddsPersonProto{};
 	        person.name(argv[1]);
 	        person.age(std::rand());
