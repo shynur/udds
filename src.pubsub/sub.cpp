@@ -2,6 +2,7 @@
 #include "../include/udds/udds.hpp"
 
 #include "UddsPersonProtoPubSubTypes.hpp"  // <-- FastDDS 命令行工具自动生成的 proto 头文件.
+
 auto _ = new RBK_UDDS_SUBSCRIBER(
     123,  // <- 频道
     "topic A",
@@ -9,8 +10,8 @@ auto _ = new RBK_UDDS_SUBSCRIBER(
     [](std::shared_ptr<UddsPersonProto> person) {
         std::printf("Get {name: %s, age: %u}\n", person->name().c_str(), person->age());
     }  // <- 注册回调
-);  // 若要取消订阅, delete 被 new 出来的指针即可.
+);
 
 int main() {
-    std::this_thread::sleep_for(10000s);
+    std::this_thread::sleep_for(5s);
 }
