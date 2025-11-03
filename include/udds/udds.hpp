@@ -177,7 +177,7 @@ namespace shynur::udds {
                      message
                     #else
                      [&]() -> auto& {
-                         const decltype(auto) msg = message();
+                         const auto&& msg = message();
                          return msg;
                      }()
                     #endif
