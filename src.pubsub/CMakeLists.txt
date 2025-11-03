@@ -14,7 +14,7 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 file(GLOB PROTO_SOURCES "*.cxx")
-add_compile_options(-std=c++20 -Wpedantic -Wall -W)
+add_compile_options(-std=c++17 -Wpedantic -Wall -W)
 
 add_executable(pub
     pub.cpp
