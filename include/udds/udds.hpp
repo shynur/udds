@@ -83,7 +83,7 @@ namespace shynur::udds {
             const std::string participant_name,
             const std::string topic_name
             #ifdef SEER_ROBOTICS_UDDS
-            , (const char *const proto_name_cstr)()
+            , const char *(* const proto_name_cstr)()
             #endif
         ): type{new proto_pub_sub_t} {
             this->participant
@@ -312,7 +312,7 @@ namespace shynur::udds {
 	    #endif
 		 && message_processor
             #ifdef SEER_ROBOTICS_UDDS
-            , (const char *const proto_name_cstr)()
+            , const char *(* const proto_name_cstr)()
             #endif
         )
 	#ifndef SEER_ROBOTICS_UDDS
