@@ -313,6 +313,7 @@ namespace shynur::udds {
 		 && message_processor
             #ifdef SEER_ROBOTICS_UDDS
             , (const char *const proto_name_cstr)()
+            #endif
         )
 	#ifndef SEER_ROBOTICS_UDDS
             requires requires {
