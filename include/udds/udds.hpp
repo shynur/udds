@@ -82,6 +82,9 @@ namespace shynur::udds {
             const std::uint8_t domain_id,
             const std::string participant_name,
             const std::string topic_name
+            #ifdef SEER_ROBOTICS_UDDS
+            , (const char *const proto_name_cstr)()
+            #endif
         ): type{new proto_pub_sub_t} {
             this->participant
                 = ::eprosima::fastdds::dds::DomainParticipantFactory::get_instance()
@@ -101,12 +104,7 @@ namespace shynur::udds {
             this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
-                    #ifndef SEER_ROBOTICS_UDDS
-                        proto_name_cstr()
-		    #else
-		        participant_name.c_str()
-		    #endif
-		                          ,
+                    proto_name_cstr(),
                     [] {
                         auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
                         qos.reliability().max_blocking_time = 1.0;  // 可靠传输需要允许阻塞比较长的时间.
@@ -313,6 +311,8 @@ namespace shynur::udds {
                 F
 	    #endif
 		 && message_processor
+            #ifdef SEER_ROBOTICS_UDDS
+            , (const char *const proto_name_cstr)()
         )
 	#ifndef SEER_ROBOTICS_UDDS
             requires requires {
@@ -356,12 +356,7 @@ namespace shynur::udds {
             this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
-		    #ifndef SEER_ROBOTICS_UDDS
-                        proto_name_cstr()
-		    #else
-		        participant_name.c_str()
-		    #endif
-		                          ,
+		    proto_name_cstr(),
                     [] {
                         auto qos = ::eprosima::fastdds::dds::TOPIC_QOS_DEFAULT;
                         qos.durability().kind  // 订阅该主题后自动获取历史消息.
@@ -418,11 +413,13 @@ namespace shynur::udds {
 #ifdef SEER_ROBOTICS_UDDS
     #define RBK_UDDS_PUBLISHER(channel, topic_name, proto_typename)                     \
                 ::shynur::udds::Publisher<proto_typename, proto_typename##PubSubType>{  \
-                    channel, #proto_typename, topic_name                                \
+                    channel, std::to_string(std::rand()), topic_name,                   \
+                    +[] {return #proto_typename;}                                       \
                 }
     #define RBK_UDDS_SUBSCRIBER(channel, topic_name, proto_typename, callback)           \
                 ::shynur::udds::Subscriber<proto_typename, proto_typename##PubSubType>{  \
-                    channel, #proto_typename, topic_name, callback                       \
+                    channel, std::to_string(std::rand()), topic_name, callback,          \
+                    +[] {return #proto_typename;}                                        \
                 }
 #endif
 
