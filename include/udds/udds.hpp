@@ -101,7 +101,7 @@ namespace shynur::udds {
             this->topic
                 = this->participant->create_topic(
                     topic_name.c_str(),
-		    #ifndef SEER_ROBOTICS_UDDS
+                    #ifndef SEER_ROBOTICS_UDDS
                         proto_name_cstr()
 		    #else
 		        topic_name.c_str()
@@ -159,9 +159,28 @@ namespace shynur::udds {
          *        如果未发现相应的 reader, 则不发布 (因为没有人会接收).
          * @return 如果真的发布了消息, 则返回 true; 否则返回 false.
          */
-        auto publish(const proto_t& message) {
+        #ifdef SEER_ROBOTICS_UDDS
+        template <typename Thunk>
+        #endif
+        auto publish(
+       	    #ifndef SEER_ROBOTICS_UDDS
+	    const proto_t&
+	    #else
+	    Thunk&&
+	    #endif
+                    message
+	) {
             if (this->writer_listener.matched >= 1) [[likely]] {
-                this->writer->write(&message);
+                this->writer->write(
+                    &
+                    #ifndef SEER_ROBOTICS_UDDS
+                     message
+                    #else
+                     [&]() -> auto&& {
+                         return message();
+                     }()
+                    #endif
+                );
                 return true;
             } else
                 return false;
@@ -308,7 +327,7 @@ namespace shynur::udds {
                 std::make_unique<proto_t>
             #endif
                 ,
-	    [msg_processor=std::forward<decltype(message_processor)>(message_processor)](proto_t& msg) {
+	    [msg_processor=std::forward<decltype(message_processor)>(message_processor)](proto_t& msg) mutable {
                 msg_processor(
 	            #ifndef SEER_ROBOTICS_UDDS
                         msg
@@ -396,12 +415,18 @@ namespace shynur::udds {
 }
 
 #ifdef SEER_ROBOTICS_UDDS
-  #define RBK_UDDS_PUBLISHER(channel, publisher_name, proto_typename)                 \
-              ::shynur::udds::Publisher<proto_typename, proto_typename##PubSubType>{  \
-                  channel, publisher_name, #proto_typename                            \
-              }
-  #define RBK_UDDS_SUBSCRIBER(channel, subscriber_name, proto_typename, callback)      \
-              ::shynur::udds::Subscriber<proto_typename, proto_typename##PubSubType>{  \
-                  channel, subscriber_name, #proto_typename, callback                  \
-              }
+    #define RBK_UDDS_PUBLISHER(channel, publisher_name, topic_name, proto_typename)     \
+                ::shynur::udds::Publisher<proto_typename, proto_typename##PubSubType>{  \
+                    channel, publisher_name, topic_name                                 \
+                }
+    #define RBK_UDDS_SUBSCRIBER(channel, subscriber_name, topic_name, proto_typename, callback)  \
+                ::shynur::udds::Subscriber<proto_typename, proto_typename##PubSubType>{          \
+                    channel, subscriber_name, topic_name, callback                               \
+                }
 #endif
+
+// Local Variables:
+// indent-tabs-mode: nil
+// c-basic-offset: 4
+// tab-width: 8
+// End:
