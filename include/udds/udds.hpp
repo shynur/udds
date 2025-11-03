@@ -176,7 +176,7 @@ namespace shynur::udds {
                     #ifndef SEER_ROBOTICS_UDDS
                      message
                     #else
-                     [&]() mutable -> const auto&& {
+                     [&]() mutable -> auto&& {
                          decltype(auto) msg = message();
                          return msg;
                      }()
