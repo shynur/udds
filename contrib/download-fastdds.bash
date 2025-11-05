@@ -14,7 +14,7 @@ if [ -f /etc/apt/sources.list ]; then
     sed -i 's/\(archive\|security\)\.ubuntu\.com/mirrors.cloud.aliyuncs.com/g' /etc/apt/sources.list
 fi
 apt update
-apt install -y wget patch
+apt install -y wget patch emacs-nox
 
 if ! type cmake || [ 3.31 = `cmake --version | head -n 1 | awk '{print $3"\n3.31"}' | sort -V -r | head -n 1` ]; then
     wget -O /tmp/cmake-installer.sh https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-$HOSTTYPE.sh
@@ -47,9 +47,32 @@ if [ "$REPLY" != y ]; then
 fi
 
 cd fast-dds.installer.d
+
 for f in ./**/*.h ./**/*.c ./**/*.hpp ./**/*.cpp ./**/*.cxx; do
     sed -i s/asio::io_service/asio::io_context/g $f
 done
+
+emacs src/fastdds/src/cpp/fastdds/topic/DDSSQLFilter/DDSFilterValue.hpp -batch -Q -eval '
+(progn
+  (goto-line 25)
+  (end-of-line)
+  (newline)
+  (insert "#include <cstdint>")
+  (save-buffer))'
+emacs src/fastdds/src/cpp/fastdds/topic/DDSSQLFilter/DDSFilterCompoundCondition.hpp -batch -Q -eval '
+(progn
+  (goto-line 22)
+  (end-of-line)
+  (newline)
+  (insert "#include <cstdint>")
+  (save-buffer))'
+emacs src/fastdds/src/cpp/rtps/reader/BaseReader.cpp -batch -Q -eval '
+(progn
+  (goto-line 520)
+  (beginning-of-line)
+  (insert "//")
+  (save-buffer))'
+
 if [ -f install.sh.bak ]; then
     rm install.sh
     cp install.sh{.bak,}
