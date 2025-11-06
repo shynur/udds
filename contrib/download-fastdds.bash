@@ -38,7 +38,7 @@ else
 fi
 
 echo
-echo -n '是否要立即执行 installer?  (y/n) '
+#echo -n '是否要立即执行 installer?  (y/n) '
 REPLY=y #read
 if [ "$REPLY" != y ]; then
     echo '你可稍后以相同命令再次执行此脚本以继续安装'
@@ -81,5 +81,5 @@ fi
 patch <$SCRIPT_DIR/fastdds-install.sh.patch
 
 : ${CC:=cc} ${CXX:=c++}
-export CC CXX
-bash ./install.sh --build-cores `nproc` --no-security --install-prefix /usr/local
+chmod +x install.sh
+CC=$CC CXX=$CXX ./install.sh --build-cores `nproc` --no-security --install-prefix /usr/local
