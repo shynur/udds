@@ -1,6 +1,5 @@
 #! /bin/bash -e
 # Usage: (cd /tmp; "$0" 3.2.2)
-
 shopt -s globstar
 
 SCRIPT_DIR=`cd \`dirname $0\`; pwd`
@@ -19,7 +18,7 @@ apt install -y wget patch emacs-nox
 if ! type cmake || [ 3.31 = `cmake --version | head -n 1 | awk '{print $3"\n3.31"}' | sort -V -r | head -n 1` ]; then
     wget -O /tmp/cmake-installer.sh https://github.com/Kitware/CMake/releases/download/v3.31.9/cmake-3.31.9-linux-$HOSTTYPE.sh
     chmod +x /tmp/cmake-installer.sh
-    /tmp/cmake-installer.sh --prefix=/usr/local --exclude-subdir
+    /tmp/cmake-installer.sh --prefix=/usr --exclude-subdir
 fi
 
 WHICH_FASTDDS_I_WANNA_DOWNLOAD=eProsima_Fast-DDS-v$1-Linux.tgz
@@ -82,4 +81,5 @@ fi
 patch <$SCRIPT_DIR/fastdds-install.sh.patch
 
 : ${CC:=cc} ${CXX:=c++}
-bash ./install.sh --build-cores `nproc` --no-security --no-static-libs --install-prefix /usr/local
+export CC CXX
+bash ./install.sh --build-cores `nproc` --no-security --install-prefix /usr/local
