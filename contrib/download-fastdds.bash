@@ -82,4 +82,4 @@ patch <$SCRIPT_DIR/fastdds-install.sh.patch
 
 : ${CC:=cc} ${CXX:=c++}
 chmod +x install.sh
-CC=$CC CXX=$CXX ./install.sh --build-cores `nproc` --no-security --install-prefix /usr/local
+CC=$CC CXX=$CXX ./install.sh --build-cores `nproc` --no-security --no-shared-libs --install-prefix /usr/local
