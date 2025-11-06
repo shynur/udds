@@ -1,5 +1,5 @@
 --- install.sh	2025-10-31 09:48:26.677708725 +0800
-+++ install.sh	2025-11-06 10:05:09.675219575 +0800
++++ install.sh	2025-11-06 13:38:48.348817376 +0800
 @@ -1,4 +1,4 @@
 -#!/bin/bash
 +#!/bin/bash -e
@@ -35,7 +35,7 @@
  
  print_usage()
  {
-@@ -122,25 +140,25 @@
+@@ -122,26 +140,23 @@
      # Determine if apt-get is available
      if [[ ${INSTALL_DEPENDENCIES} == "TRUE" ]]
      then
@@ -60,30 +60,37 @@
      # Build and install foonthan memory
      mkdir -p ${SCRIPT_DIR}/build/foonathan_memory_vendor
      cd ${SCRIPT_DIR}/build/foonathan_memory_vendor
-     cmake \
+-    cmake \
 -        -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
-+        -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}  \
-+	     $SHYNUR_CMAKE_VARS  \
-         ${SCRIPT_DIR}/src/foonathan_memory_vendor
+-        ${SCRIPT_DIR}/src/foonathan_memory_vendor
++    bash -c "cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} $SHYNUR_CMAKE_VARS ${SCRIPT_DIR}/src/foonathan_memory_vendor"
      cmake --build . --target install -j ${BUILD_CORES}
      cd -
-@@ -151,8 +169,9 @@
+ 
+@@ -150,24 +165,14 @@
+         # Build and install Fast CDR
          mkdir -p ${SCRIPT_DIR}/build/fastcdr
          cd ${SCRIPT_DIR}/build/fastcdr
-         cmake \
+-        cmake \
 -            -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
 -            -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} \
-+            -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}  \
-+            -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION}  \
-+	    $SHYNUR_CMAKE_VARS  \
-             ${SCRIPT_DIR}/src/fastcdr
+-            ${SCRIPT_DIR}/src/fastcdr
++        bash -c "cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} $SHYNUR_CMAKE_VARS ${SCRIPT_DIR}/src/fastcdr"
          cmake --build . --target install -j ${BUILD_CORES}
          cd -
-@@ -167,6 +186,7 @@
-             -DSECURITY=${SECURITY} \
-             -DCOMPILE_EXAMPLES=${INSTALL_EXAMPLES} \
-             -DINSTALL_EXAMPLES=${INSTALL_EXAMPLES} \
-+	    $SHYNUR_CMAKE_VARS  \
-             ${SCRIPT_DIR}/src/fastdds
+ 
+         # Build and install Fast DDS
+         mkdir -p ${SCRIPT_DIR}/build/fastdds
+         cd ${SCRIPT_DIR}/build/fastdds
+-        cmake \
+-            -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX} \
+-            -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
+-            -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} \
+-            -DSECURITY=${SECURITY} \
+-            -DCOMPILE_EXAMPLES=${INSTALL_EXAMPLES} \
+-            -DINSTALL_EXAMPLES=${INSTALL_EXAMPLES} \
+-            ${SCRIPT_DIR}/src/fastdds
++        bash -c "cmake -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX} -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DBUILD_SHARED_LIBS=${SHARED_LIBS_OPTION} -DSECURITY=${SECURITY} -DCOMPILE_EXAMPLES=${INSTALL_EXAMPLES} -DINSTALL_EXAMPLES=${INSTALL_EXAMPLES} $SHYNUR_CMAKE_VARS ${SCRIPT_DIR}/src/fastdds"
          cmake --build . --target install -j ${BUILD_CORES}
          cd -
+ 
