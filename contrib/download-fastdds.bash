@@ -39,7 +39,7 @@ fi
 
 echo
 echo -n '是否要立即执行 installer?  (y/n) '
-read
+REPLY=y #read
 if [ "$REPLY" != y ]; then
     echo '你可稍后以相同命令再次执行此脚本以继续安装'
     exit 0
