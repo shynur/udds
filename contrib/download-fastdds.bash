@@ -13,6 +13,9 @@ if [ -f /etc/apt/sources.list ]; then
     sed -i 's/\(archive\|security\)\.ubuntu\.com/mirrors.cloud.aliyuncs.com/g' /etc/apt/sources.list
 fi
 apt update
+DEBIAN_FRONTEND=noninteractive apt install -y tzdata
+ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+dpkg-reconfigure --frontend noninteractive tzdata
 apt install -y wget patch emacs-nox
 
 if ! type cmake || [ 3.31 = `cmake --version | head -n 1 | awk '{print $3"\n3.31"}' | sort -V -r | head -n 1` ]; then
