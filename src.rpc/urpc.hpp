@@ -22,7 +22,7 @@ namespace shynur::utils {
                 this->oss.str()
             );
 
-            (this->level == "DEBUG" ? std::clog : std::cerr) << msg;
+            (this->level == "ERROR" ? std::cerr : std::clog) << msg;
         }
         auto& operator<<(const auto& v) {
             if (this->context.empty())
@@ -55,11 +55,11 @@ struct [[gnu::weak]] Application {
     virtual void stop()    = 0;
 
     struct Options {
-        std::string        entity;  // server | client
-        std::size_t        thread_pool_size;  // (可选) server 线程池数量
-        std::string        operation;
-        std::int32_t       x;
-        std::int32_t       y;
+        std::string   entity;  // server|client
+        std::size_t   thread_pool_size = 0;  // (可选) server 线程池数量
+        std::string   operation;
+        std::int32_t  x;
+        std::int32_t  y;
     };
 
     struct ServerImpl: ShynurUrpcProcessorServerImplementation,
@@ -181,7 +181,7 @@ struct Ping: ::Operation {
                 return OperationStatus::ERROR;
             }
         }
-        throw std::runtime_error("Client reference expired");
+        throw std::runtime_error{"Client reference expired"};
     }
   protected:
     std::weak_ptr<ShynurUrpcProcessor> client_;
@@ -189,7 +189,7 @@ struct Ping: ::Operation {
 struct Addition: ::Operation {
     Addition(
         const std::shared_ptr<ShynurUrpcProcessor> client,
-        const std::int32_t x,const std::int32_t y
+        const std::int32_t x, const std::int32_t y
     ): x_{x}, y_{y}, client_{client} {}
 
     OperationStatus execute() override {
@@ -248,8 +248,8 @@ struct Substraction: ::Operation {
                     << "RPC exception occurred: " << e.what();
                 return OperationStatus::ERROR;
             }
-        } else
-            throw std::runtime_error{"Client reference expired"};
+        }
+        throw std::runtime_error{"Client reference expired"};
     }
   protected:
     const std::int32_t             x_, y_;
@@ -301,28 +301,21 @@ struct ClientApp: ::Application {
                  ::shynur::utils::Logger{"INFO"}
                      << "ClientApp"
                      << "Server not reachable. Stopping client execution...";
-                 this->stop();
+                 throw std::runtime_error{"Server not reachable"};
              }
          }
 
-        if (!this->stopped_.test()) try {
-            // Server available. Execute the operation.
-            set_operation();
-            if (operation_->execute() != OperationStatus::SUCCESS)
-                throw std::runtime_error{"shynur.urpc Operation failed or interrupted"};
-        } catch (const std::runtime_error& e) {
-            ::shynur::utils::Logger{"ERROR"}
-                << "ClientApp"
-                << e.what() + ". Stopping client execution..."s;
-            this->ClientApp::stop();
-        }
-
-        if (!this->stopped_.test()) {
-            ::shynur::utils::Logger{"INFO"}
-                << "ClientApp"
-                << "Operation finished. Stopping client execution...";
-            this->ClientApp::stop();
-        }
+        if (!this->stopped_.test())
+            try {
+                set_operation();
+                if (this->operation_->execute() != OperationStatus::SUCCESS)
+                    throw std::runtime_error{"shynur.urpc Operation failed or interrupted"};
+            } catch (const std::runtime_error& e) {
+                ::shynur::utils::Logger{"ERROR"}
+                    << "ClientApp"
+                    << e.what() + ". Stopping client execution..."s;
+                throw std::runtime_error{"Error occurred during RPC"};
+            }
     }
     void stop() override {
         this->stopped_.test_and_set();
