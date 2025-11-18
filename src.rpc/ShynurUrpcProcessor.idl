@@ -1,0 +1,6 @@
+exception ShynurUrpc_DontUse_{};interface ShynurUrpcProcessor{string ping_(in string arg_);
+/* >>>>>>>>>> 自定义 RPC 接口 >>>>>>>>>>>>> */
+    long addition(in long x, in long y);
+    long subtraction(in long x, in long y);
+/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+};

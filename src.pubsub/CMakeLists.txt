@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 project(UddsExample CXX)
 
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/fastdds")
 if(NOT fastcdr_FOUND)
     find_package(fastcdr 2 REQUIRED)
 endif()
-
 if(NOT fastdds_FOUND)
     find_package(fastdds 3 REQUIRED)
 endif()
 
 execute_process(
-    COMMAND bash -c "fastddsgen *.idl"
+    COMMAND bash -c "PATH+=:/opt/fastdds/bin; fastddsgen -replace *.idl"
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 file(GLOB PROTO_SOURCES "*.cxx")
