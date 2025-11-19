@@ -52,7 +52,7 @@ struct FloorClient: ::shynur::udds_rpc::ClientApp::Operation {
         assert(op_status == SUCCESS);
         ::shynur::utils::Logger{"INFO"}
             << "ClientApp"
-            << "Floor result == " << result.x() << result.y() << "!!!";
+            << "Floor result: " << result.x() << result.y() << "!!!";
 
         return op_status;
     }

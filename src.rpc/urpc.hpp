@@ -1,3 +1,7 @@
+/*
+ * Author: 谢骐 <shynur@outlook.com>
+ * URL: https://github.com/shynur/udds/blob/125d701aac1bd4036ebb083e04eff02b05a5034f/src.rpc/urpc.hpp
+ */
 #pragma once
 #include <bits/stdc++.h>
 using namespace std::literals;
