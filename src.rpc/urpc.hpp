@@ -6,13 +6,19 @@ namespace shynur::utils {
     struct [[gnu::weak]] Logger {
         const std::string_view                                   level;
         const std::chrono::time_point<std::chrono::system_clock> now;
+
         Logger(const std::string_view level)
         : level{level}, now{std::chrono::system_clock::now()} {}
+
         ~Logger() {
-            const auto time_s      = std::format("{}", std::chrono::current_zone()->to_local(this->now));
-            const auto level_color = this->level == "DEBUG" ? "\e[34;1m" : this->level == "INFO" ? "\e[32;1m"
-                                                                                                 : "\e[31;1m";
-            const auto msg         = std::format(
+            const auto time_s = std::format(
+                "{}", std::chrono::current_zone()->to_local(this->now)
+            );
+            const auto level_color = this->level == "DEBUG" ? "\e[34;1m"
+                                     : this->level == "INFO" ? "\e[32;1m"
+                                     : "\e[31;1m";
+
+            const auto msg = std::format(
                 "{}_{} {}[{}] \e[37;1m{}\e[m{}\n",
                 time_s.substr(0, time_s.find(' ')),
                 time_s.substr(time_s.find(' ') + 1, 12),
@@ -49,6 +55,7 @@ namespace shynur::utils {
 #include "ShynurUrpcProcessorServer.hpp"
 #include "ShynurUrpcProcessorServerImpl.hpp"
 
+namespace shynur::udds_rpc {
 struct [[gnu::weak]] Application {
     virtual ~Application() = default;
     virtual void run()     = 0;
@@ -59,14 +66,14 @@ struct [[gnu::weak]] Application {
         std::size_t   thread_pool_size = 0;  // (可选) server 线程池数量
     };
 
-    struct ServerImpl: ShynurUrpcProcessorServerImplementation,
+    struct ServerImpl: ::ShynurUrpcProcessorServerImplementation,
                        std::enable_shared_from_this<ServerImpl> {
         auto ptr() -> std::shared_ptr<ServerImpl>{
             return shared_from_this();
         }
       private:
         auto ping_(
-            const ShynurUrpcProcessorServer_ClientContext&,
+            const ::ShynurUrpcProcessorServer_ClientContext&,
             const std::string&
         ) -> std::string override {
             return "";
@@ -76,8 +83,8 @@ struct [[gnu::weak]] Application {
     static auto make_app(const Options& options) -> std::shared_ptr<Application>;
 };
 
-template <std::derived_from<::Application::ServerImpl> UserDefinedServerImpl>
-class ServerApp: public ::Application {
+template <std::derived_from<Application::ServerImpl> UserDefinedServerImpl>
+class ServerApp: public Application {
     std::atomic_flag                                   stopped_     = ATOMIC_FLAG_INIT;
     ::eprosima::fastdds::dds::DomainParticipant *const participant_ = [] {
         const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
@@ -90,14 +97,16 @@ class ServerApp: public ::Application {
         return participant;
     }();
     std::shared_ptr<ServerImpl> server_impl_{(ServerImpl *)new UserDefinedServerImpl};
-    std::shared_ptr<ShynurUrpcProcessorServer> server_;
+    std::shared_ptr<::ShynurUrpcProcessorServer> server_;
   public:
     const struct Config {
         const std::size_t thread_pool_size = 0;
     } config;
-    ServerApp(const std::string_view service_name, const Config& config)
-    : config{config}, server_{[&, this] {
-          const auto server = create_ShynurUrpcProcessorServer(
+
+    ServerApp(
+        const std::string_view service_name, const Config& config
+    ): config{config}, server_{[&, this] {
+          const auto server = ::create_ShynurUrpcProcessorServer(
               *this->participant_,
               std::string{service_name}.c_str(),
               ::eprosima::fastdds::dds::ReplierQos{},
@@ -110,7 +119,8 @@ class ServerApp: public ::Application {
       }()} {
         ::shynur::utils::Logger{"INFO"}
             << "ServerApp"
-            << "Server initialized with ID: " << this->participant_->guid().guidPrefix;
+            << "Server initialized with ID: "
+            << this->participant_->guid().guidPrefix;
     }
     ~ServerApp() override {
         // As a precautionary measure, delete the server here because
@@ -144,75 +154,73 @@ class ServerApp: public ::Application {
     }
 };
 
-struct Operation {
-    enum class OperationStatus {SUCCESS, TIMEOUT, ERROR};
-    using enum OperationStatus;
-    virtual auto execute() -> OperationStatus = 0;
-    virtual ~Operation()              = default;
-  protected:
-    auto call_rpc(
-        const auto rpc, auto&& result, auto&&... args
-    ) /* final */ {
-        if (auto client = this->client_.lock()) {
-            auto future = std::mem_fn(rpc)(
-                client, std::forward<decltype(args)>(args)...
-            );
-            if (future.wait_for(1s) != std::future_status::ready) {
-                ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "Timed out";
-                return TIMEOUT;
+struct [[gnu::weak]] ClientApp: Application {
+    struct Operation {
+        enum class OperationStatus {SUCCESS, TIMEOUT, ERROR};
+        using enum OperationStatus;
+        virtual auto execute() -> OperationStatus = 0;
+        virtual ~Operation()              = default;
+      protected:
+        auto call_rpc(
+            const auto rpc, auto&& result, auto&&... args
+        ) /* final */ {
+            if (auto client = this->client_.lock()) {
+                auto future = std::mem_fn(rpc)(
+                    client, std::forward<decltype(args)>(args)...
+                );
+                if (future.wait_for(1s) != std::future_status::ready) {
+                    ::shynur::utils::Logger{"INFO"}
+                        << "ClientApp"
+                        << "Timed out";
+                    return TIMEOUT;
+                }
+                try {
+                    result = future.get();
+                    ::shynur::utils::Logger{"INFO"}
+                        << "ClientApp"
+                        << "operation successful";
+                    return SUCCESS;
+                } catch (const ::eprosima::fastdds::dds::rpc::RpcBrokenPipeException&) {
+                    ::shynur::utils::Logger{"INFO"}
+                        << "ClientApp"
+                        << "Server not reachable";
+                    return ERROR;
+                } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
+                    ::shynur::utils::Logger{"ERROR"}
+                        << "ClientApp"
+                        << "RPC exception occurred: " << e.what();
+                    return ERROR;
+                }
             }
-            try {
-                result = future.get();
-                ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "operation successful";
-                return SUCCESS;
-            } catch (const ::eprosima::fastdds::dds::rpc::RpcBrokenPipeException&) {
-                ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "Server not reachable";
-                return ERROR;
-            } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
-                ::shynur::utils::Logger{"ERROR"}
-                    << "ClientApp"
-                    << "RPC exception occurred: " << e.what();
-                return ERROR;
-            }
+            throw std::runtime_error{"Client reference expired"};
         }
-        throw std::runtime_error{"Client reference expired"};
-    }
-  private:
-    mutable std::weak_ptr<ShynurUrpcProcessor> client_;
-    friend class ClientApp;
-};
-struct Ping: ::Operation {
-    auto execute() -> OperationStatus override {
-        const auto op_status = this->call_rpc(&::ShynurUrpcProcessor::ping_, ""s, ""s);
-        ::shynur::utils::Logger{"INFO"} << "Ping";
-        return op_status;
-    }
-};
-struct ClientApp: ::Application {
+    private:
+        mutable std::weak_ptr<::ShynurUrpcProcessor> client_;
+        friend class ClientApp;
+    };
+
     const struct Config {
         const std::size_t connection_attempts = 10;
     } config;
 
-    ClientApp(const std::string_view service_name, const Config& config)
-    : config{config}, client_{[&, this] {
-          const auto client = create_ShynurUrpcProcessorClient(
-              *this->participant_,
-              std::string{service_name}.c_str(),
-              ::eprosima::fastdds::dds::RequesterQos{}
-          );
-          if (!client)
-              throw std::runtime_error{"Failed to create client"};
-          return client;
-      }()} {
+    ClientApp(
+        const std::string_view service_name, const Config& config
+    ): config{config}, client_{
+        [&, this] {
+            const auto client = ::create_ShynurUrpcProcessorClient(
+                *this->participant_,
+                std::string{service_name}.c_str(),
+                ::eprosima::fastdds::dds::RequesterQos{}
+            );
+            if (!client)
+                throw std::runtime_error{"Failed to create client"};
+            return client;
+        }()
+    } {
         ::shynur::utils::Logger{"INFO"}
             << "ClientApp"
-            << "Client initialized with ID: " << this->participant_->guid().guidPrefix;
+            << "Client initialized with ID: "
+            << this->participant_->guid().guidPrefix;
     }
     ~ClientApp() override {
         // As a precautionary measure, delete the server here because
@@ -233,7 +241,7 @@ struct ClientApp: ::Application {
             << "ClientApp"
             << "Client execution stopped";
     }
-    auto call(std::derived_from<::Operation> auto op) {
+    auto call(std::derived_from<Operation> auto op) {
         this->set_operation(std::move(op));
         this->run();
     }
@@ -243,18 +251,20 @@ struct ClientApp: ::Application {
             return;
 
         if (!this->ping_server()) {
-             if (!this->stopped_.test()) {
+            if (!this->stopped_.test()) {
                  ::shynur::utils::Logger{"INFO"}
-                     << "ClientApp"
-                     << "Server not reachable. Stopping client execution...";
-                 throw std::runtime_error{"Server not reachable"};
-             }
-         }
+                    << "ClientApp"
+                    << "Server not reachable. Stopping client execution...";
+                throw std::runtime_error{"Server not reachable"};
+            }
+        }
 
         if (!this->stopped_.test())
             try {
-                if (this->operation_->execute() != ::Operation::SUCCESS)
-                    throw std::runtime_error{"shynur.urpc Operation failed or interrupted"};
+                if (this->operation_->execute() != Operation::SUCCESS)
+                    throw std::runtime_error{
+                        "shynur.urpc Operation failed or interrupted"
+                    };
             } catch (const std::runtime_error& e) {
                 ::shynur::utils::Logger{"ERROR"}
                     << "ClientApp"
@@ -262,15 +272,25 @@ struct ClientApp: ::Application {
                 throw std::runtime_error{"Error occurred during RPC"};
             }
     }
-    void set_operation(std::derived_from<::Operation> auto op) {
-        op.::Operation::client_ = this->client_;
-        this->operation_ = std::unique_ptr<::Operation>{
+    void set_operation(std::derived_from<Operation> auto op) {
+        op.Operation::client_ = this->client_;
+        this->operation_ = std::unique_ptr<Operation>{
             new auto{std::move(op)}
         };
     }
     bool ping_server() {
+        struct Ping: Operation {
+            auto execute() -> OperationStatus override {
+                const auto op_status = this->call_rpc(
+                    &::ShynurUrpcProcessor::ping_, ""s, ""s
+                );
+                ::shynur::utils::Logger{"INFO"} << "Ping";
+                return op_status;
+            }
+        };
+
         auto original_operation = std::move(this->operation_);
-        this->set_operation<::Ping>({});
+        this->set_operation<Ping>({});
 
         auto reachable = false;
         for (auto i = 0u; i < this->config.connection_attempts; i++)
@@ -292,7 +312,7 @@ struct ClientApp: ::Application {
                     << (i + 1) << "/" << this->config.connection_attempts << " failed.";
 
                 if (i == this->config.connection_attempts - 1)
-                     ::shynur::utils::Logger{"ERROR"}
+                    ::shynur::utils::Logger{"ERROR"}
                         << "ClientApp"
                         << "Failed to connect to server";
             }
@@ -305,32 +325,37 @@ struct ClientApp: ::Application {
     ::eprosima::fastdds::dds::DomainParticipant *participant_ = [] {
         const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
         if (!factory)
-            throw std::runtime_error{"shynur.urpc Failed to get participant factory instance"};
+            throw std::runtime_error{
+                "shynur.urpc Failed to get participant factory instance"
+            };
 
         const auto participant = factory->create_participant_with_default_profile();
         if (!participant)
-            throw std::runtime_error{"shynur.urpc Participant initialization failed"};
+            throw std::runtime_error{
+                "shynur.urpc Participant initialization failed"
+            };
         return participant;
     }();
     std::shared_ptr<ShynurUrpcProcessor> client_;
-    std::unique_ptr<::Operation>    operation_;
+    std::unique_ptr<Operation>    operation_;
 };
 
-template <std::derived_from<::Application::ServerImpl> UserDefinedServerImpl>
-auto ::Application::make_app(const Options& options) -> std::shared_ptr<::Application> {
+template <std::derived_from<Application::ServerImpl> UserDefinedServerImpl>
+auto Application::make_app(const Options& options) -> std::shared_ptr<Application> {
     constexpr auto service_name = "ShynurUrpcProcessor_Service"sv;
-    ::Application *app;
+    Application *app;
     if (options.entity == "server"s)
-        app = new ::ServerApp<UserDefinedServerImpl>{
+        app = new ServerApp<UserDefinedServerImpl>{
             service_name,
             {
                 .thread_pool_size = options.thread_pool_size,
             }
         };
     else
-        app = new ::ClientApp{
+        app = new ClientApp{
             service_name,
             {}
         };
-    return std::shared_ptr<::Application>{app};
+    return std::shared_ptr<Application>{app};
 }
+} // namespace shynur::udds_rpc
