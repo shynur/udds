@@ -57,9 +57,6 @@ struct [[gnu::weak]] Application {
     struct Options {
         std::string   entity;  // server|client
         std::size_t   thread_pool_size = 0;  // (可选) server 线程池数量
-        std::string   operation;
-        std::int32_t  x;
-        std::int32_t  y;
     };
 
     struct ServerImpl: ShynurUrpcProcessorServerImplementation,
@@ -95,7 +92,7 @@ class ServerApp: public ::Application {
     std::shared_ptr<ServerImpl> server_impl_{(ServerImpl *)new UserDefinedServerImpl};
     std::shared_ptr<ShynurUrpcProcessorServer> server_;
   public:
-    struct Config {
+    const struct Config {
         const std::size_t thread_pool_size = 0;
     } config;
     ServerApp(const std::string_view service_name, const Config& config)
@@ -147,121 +144,76 @@ class ServerApp: public ::Application {
     }
 };
 
-enum class OperationStatus {SUCCESS, TIMEOUT, ERROR};
 struct Operation {
-    virtual OperationStatus execute() = 0;
+    enum class OperationStatus {SUCCESS, TIMEOUT, ERROR};
+    using enum OperationStatus;
+    virtual auto execute() -> OperationStatus = 0;
     virtual ~Operation()              = default;
-};
-struct Ping: ::Operation {
-    Ping(const std::shared_ptr<ShynurUrpcProcessor> client): client_{client} {}
-    auto execute() -> OperationStatus override {
+  protected:
+    auto call_rpc(
+        const auto rpc, auto&& result, auto&&... args
+    ) /* final */ {
         if (auto client = this->client_.lock()) {
-            auto future = client->ping_("");
+            auto future = std::mem_fn(rpc)(
+                client, std::forward<decltype(args)>(args)...
+            );
             if (future.wait_for(1s) != std::future_status::ready) {
                 ::shynur::utils::Logger{"INFO"}
                     << "ClientApp"
-                    << "Ping operation timed out";
-                return OperationStatus::TIMEOUT;
+                    << "Timed out";
+                return TIMEOUT;
             }
             try {
-                future.get();
+                result = future.get();
                 ::shynur::utils::Logger{"INFO"}
                     << "ClientApp"
-                    << "Ping operation successful";
-                return OperationStatus::SUCCESS;
+                    << "operation successful";
+                return SUCCESS;
             } catch (const ::eprosima::fastdds::dds::rpc::RpcBrokenPipeException&) {
                 ::shynur::utils::Logger{"INFO"}
                     << "ClientApp"
                     << "Server not reachable";
-                return OperationStatus::ERROR;
+                return ERROR;
             } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
                 ::shynur::utils::Logger{"ERROR"}
                     << "ClientApp"
-                    << "RPC exception occurred during ping: " << e.what();
-                return OperationStatus::ERROR;
+                    << "RPC exception occurred: " << e.what();
+                return ERROR;
             }
         }
         throw std::runtime_error{"Client reference expired"};
     }
-  protected:
-    std::weak_ptr<ShynurUrpcProcessor> client_;
+  private:
+    mutable std::weak_ptr<ShynurUrpcProcessor> client_;
+    friend class ClientApp;
+};
+struct Ping: ::Operation {
+    auto execute() -> OperationStatus override {
+        const auto op_status = this->call_rpc(&::ShynurUrpcProcessor::ping_, ""s, ""s);
+        ::shynur::utils::Logger{"INFO"} << "Ping";
+        return op_status;
+    }
 };
 struct Addition: ::Operation {
-    Addition(
-        const std::shared_ptr<ShynurUrpcProcessor> client,
-        const std::int32_t x, const std::int32_t y
-    ): x_{x}, y_{y}, client_{client} {}
-
-    OperationStatus execute() override {
-        if (auto client = this->client_.lock()) {
-            auto future = client->addition(this->x_, this->y_);
-            try {
-                this->result_ = future.get();
-                ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "Addition result: "
-                    << this->x_ << " + " << this->y_
-                    << " = " << this->result_;
-                return OperationStatus::SUCCESS;
-            } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
-                ::shynur::utils::Logger{"ERROR"}
-                    << "ClientApp"
-                    << "RPC exception occurred: " << e.what();
-                return OperationStatus::ERROR;
-            }
-        } else
-            throw std::runtime_error{"Client reference expired"};
+    Addition(const std::int32_t x, const std::int32_t y): x{x}, y{y} {}
+    const std::int32_t x, y;
+    auto execute() -> OperationStatus override {
+        std::int32_t result;
+        ::shynur::utils::Logger{"DEBUG"}
+            << "ClientApp"
+            << "Calling addition with x =" << this->x << "  y =" << this->y;
+        const auto op_status = this->call_rpc(
+            &::ShynurUrpcProcessor::addition, result, this->x, this->y
+        );
+        ::shynur::utils::Logger{"INFO"}
+            << "ClientApp"
+            << "Addition result == " << result;
+        return op_status;
     }
-  protected:
-    const std::int32_t             x_, y_;
-    std::int32_t                  result_;
-    const std::weak_ptr<ShynurUrpcProcessor> client_;
 };
-struct Substraction: ::Operation {
-    Substraction(
-        const std::shared_ptr<ShynurUrpcProcessor> client,
-        const std::int32_t x, const std::int32_t y
-    ): x_{x}, y_{y}, client_{client} {}
-
-    OperationStatus execute() override {
-        if (auto client = this->client_.lock()) {
-            auto future = client->subtraction(this->x_, this->y_);
-
-            if (future.wait_for(1000ms) != std::future_status::ready) {
-                ::shynur::utils::Logger{"ERROR"}
-                    << "ClientApp"
-                    << "Operation timed out";
-                return OperationStatus::TIMEOUT;
-            }
-
-            try {
-                this->result_ = future.get();
-                ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "Addition result: "
-                    << this->x_ << " - " << this->y_
-                    << " = " << this->result_;
-                return OperationStatus::SUCCESS;
-            } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
-                ::shynur::utils::Logger{"ERROR"}
-                    << "ClientApp"
-                    << "RPC exception occurred: " << e.what();
-                return OperationStatus::ERROR;
-            }
-        }
-        throw std::runtime_error{"Client reference expired"};
-    }
-  protected:
-    const std::int32_t             x_, y_;
-    std::int32_t                  result_;
-    const std::weak_ptr<ShynurUrpcProcessor> client_;
-};
-
 struct ClientApp: ::Application {
-    struct Config {
+    const struct Config {
         const std::size_t connection_attempts = 10;
-        const std::string  operation;
-        const std::int32_t x, y;
     } config;
 
     ClientApp(const std::string_view service_name, const Config& config)
@@ -272,7 +224,7 @@ struct ClientApp: ::Application {
               ::eprosima::fastdds::dds::RequesterQos{}
           );
           if (!client)
-              throw std::runtime_error("Failed to create client");
+              throw std::runtime_error{"Failed to create client"};
           return client;
       }()} {
         ::shynur::utils::Logger{"INFO"}
@@ -292,6 +244,17 @@ struct ClientApp: ::Application {
                 ->delete_participant(this->participant_);
         }
     }
+    void stop() override {
+        this->stopped_.test_and_set();
+        ::shynur::utils::Logger{"INFO"}
+            << "ClientApp"
+            << "Client execution stopped";
+    }
+    auto call(std::derived_from<::Operation> auto op) {
+        this->set_operation(std::move(op));
+        this->run();
+    }
+  protected:
     void run() override {
         if (this->stopped_.test())
             return;
@@ -307,8 +270,7 @@ struct ClientApp: ::Application {
 
         if (!this->stopped_.test())
             try {
-                set_operation();
-                if (this->operation_->execute() != OperationStatus::SUCCESS)
+                if (this->operation_->execute() != ::Operation::SUCCESS)
                     throw std::runtime_error{"shynur.urpc Operation failed or interrupted"};
             } catch (const std::runtime_error& e) {
                 ::shynur::utils::Logger{"ERROR"}
@@ -317,34 +279,17 @@ struct ClientApp: ::Application {
                 throw std::runtime_error{"Error occurred during RPC"};
             }
     }
-    void stop() override {
-        this->stopped_.test_and_set();
-        ::shynur::utils::Logger{"INFO"}
-            << "ClientApp"
-            << "Client execution stopped";
-    }
-  protected:
-    void set_operation() {
-        if (this->config.operation == "+")
-            this->operation_ = std::unique_ptr<::Operation>{
-                new ::Addition{
-                    this->client_,
-                    this->config.x, this->config.y
-                }
-            };
-        else if (this->config.operation == "-")
-            this->operation_ = std::unique_ptr<::Operation>{
-                new ::Substraction{
-                    this->client_,
-                    this->config.x, this->config.y
-                }
-            };
-        else
-            throw std::runtime_error{"shynur.urpc Invalid operation"};
+    void set_operation(std::derived_from<::Operation> auto op) {
+        op.::Operation::client_ = this->client_;
+        this->operation_ = std::unique_ptr<::Operation>{
+            new auto{std::move(op)}
+        };
     }
     bool ping_server() {
-        this->operation_ = std::unique_ptr<::Operation>{new ::Ping{this->client_}};
+        auto original_operation = std::move(this->operation_);
+        this->set_operation<::Ping>({});
 
+        auto reachable = false;
         for (auto i = 0u; i < this->config.connection_attempts; i++)
             if (!this->stopped_.test()) {
                 ::shynur::utils::Logger{"DEBUG"}
@@ -352,23 +297,25 @@ struct ClientApp: ::Application {
                    << "Trying to reach server, attempt "
                    << (i + 1) << "/" << this->config.connection_attempts;
 
-                 std::this_thread::sleep_for(1s);
+                std::this_thread::sleep_for(1s);
 
-               if (this->operation_->execute() == OperationStatus::SUCCESS)
-                     return true;
+                reachable = this->operation_->execute() == Operation::SUCCESS;
+                if (reachable)
+                    break;
 
-                 ::shynur::utils::Logger{"DEBUG"}
-                     << "ClientApp"
-                     << "Server not reachable, attempt "
-                     << (i + 1) << "/" << this->config.connection_attempts << " failed.";
+                ::shynur::utils::Logger{"DEBUG"}
+                    << "ClientApp"
+                    << "Server not reachable, attempt "
+                    << (i + 1) << "/" << this->config.connection_attempts << " failed.";
 
                 if (i == this->config.connection_attempts - 1)
                      ::shynur::utils::Logger{"ERROR"}
-                         << "ClientApp"
+                        << "ClientApp"
                         << "Failed to connect to server";
             }
 
-         return false;
+        this->operation_ = std::move(original_operation);
+        return reachable;
      }
 
     std::atomic_flag                             stopped_     = ATOMIC_FLAG_INIT;
@@ -400,10 +347,7 @@ auto ::Application::make_app(const Options& options) -> std::shared_ptr<::Applic
     else
         app = new ::ClientApp{
             service_name,
-            {
-                .operation = options.operation,
-                .x = options.x, .y = options.y,
-            }
+            {}
         };
     return std::shared_ptr<::Application>{app};
 }
