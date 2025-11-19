@@ -15,10 +15,24 @@ struct Server: ::Application::ServerImpl {
         return result;
     }
 };
-
+struct Addition: ::Operation {
+    Addition(const std::int32_t x, const std::int32_t y): x{x}, y{y} {}
+    const std::int32_t x, y;
+    auto execute() -> OperationStatus override {
+        std::int32_t result;
+        ::shynur::utils::Logger{"DEBUG"}
+            << "ClientApp"
+            << "Calling addition with x =" << this->x << "  y =" << this->y;
+        const auto op_status = this->call_rpc(
+            &::ShynurUrpcProcessor::addition, result, this->x, this->y
+        );
+        ::shynur::utils::Logger{"INFO"}
+            << "ClientApp"
+            << "Addition result == " << result;
+        return op_status;
+    }
+};
 int main(const int argc, const char *const argv[]) {
-    std::int32_t x, y;
-
     auto options = ::Application::Options{};
     for (auto i = 1; i != argc; i++)
         if (const auto arg = std::string{argv[i]}; arg == "-s")
@@ -27,16 +41,15 @@ int main(const int argc, const char *const argv[]) {
             options.entity = "client";
         else if (arg.starts_with("--thread_pool_size="))
             options.thread_pool_size = std::stoul(arg.substr(19));
-        else
-            if (static auto x_set = false; !x_set)
-                x_set = true, x = std::stoi(arg);
-            else
-                y = std::stoi(arg);
 
     auto app = ::Application::make_app<Server>(options);
-    if (options.entity == "client") {
-        std::dynamic_pointer_cast<::ClientApp>(app)->call(::Addition{x, y});
-    } else {
+    if (options.entity == "client")
+        for (auto i = 0; i != 3; i++) {
+            std::int32_t x, y;
+            std::cin >> x >> y;
+            std::dynamic_pointer_cast<::ClientApp>(app)->call(::Addition{x, y});
+        }
+    else {
         const auto _ = std::jthread{&::Application::run, app};
         static std::function<void()> stop_app_handler = [=] {app->stop();};
         signal(SIGINT, +[](int) {stop_app_handler();});

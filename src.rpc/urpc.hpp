@@ -194,23 +194,6 @@ struct Ping: ::Operation {
         return op_status;
     }
 };
-struct Addition: ::Operation {
-    Addition(const std::int32_t x, const std::int32_t y): x{x}, y{y} {}
-    const std::int32_t x, y;
-    auto execute() -> OperationStatus override {
-        std::int32_t result;
-        ::shynur::utils::Logger{"DEBUG"}
-            << "ClientApp"
-            << "Calling addition with x =" << this->x << "  y =" << this->y;
-        const auto op_status = this->call_rpc(
-            &::ShynurUrpcProcessor::addition, result, this->x, this->y
-        );
-        ::shynur::utils::Logger{"INFO"}
-            << "ClientApp"
-            << "Addition result == " << result;
-        return op_status;
-    }
-};
 struct ClientApp: ::Application {
     const struct Config {
         const std::size_t connection_attempts = 10;
