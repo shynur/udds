@@ -1,4 +1,6 @@
 #include "urpc.hpp"
+#include <exception>
+#include <string>
 
 int main(const int argc, const char *const argv[]) {
     auto options = ::shynur::udds_rpc::Application::Options{};
@@ -10,16 +12,23 @@ int main(const int argc, const char *const argv[]) {
         else if (arg.starts_with("--thread_pool_size="))
             options.thread_pool_size = std::stoul(arg.substr(19));
 
-    if (options.entity == "client") {
-        seer::urpc::call("Service1", "{}", [](auto err, auto result) noexcept {
-            if (err != nullptr)
-                return;
-            std::cout << "===== Result =====> " << result << std::endl;
-        });
-    } else {
-        auto ptr = seer::urpc::serve("Service2", [](auto json) noexcept {
-            return "[" + json + "]";
-        });
+    if (options.entity == "client")
+        seer::urpc::call(
+            "Service1",
+            std::function{[](const std::exception *err, std::string result) noexcept {
+                if (err != nullptr)
+                    return;
+                std::cout << "===== Result =====> " << result << std::endl;
+            }},
+            2, "ppppppp"
+        );
+    else {
+        auto ptr = seer::urpc::serve(
+            "Service1",
+            std::function{[](int i, std::string s) noexcept {
+                return std::to_string(i) + ": " + s;
+            }}
+        );
         std::this_thread::sleep_for(1min);
     }
 }

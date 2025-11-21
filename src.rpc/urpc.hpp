@@ -365,9 +365,11 @@ auto Application::make_app(const Options& options) -> std::shared_ptr<Applicatio
 }
 } // namespace shynur::udds_rpc
 
+#include "nlohmann/json.hpp"
+
 namespace seer::urpc {
     namespace _detail {
-        struct Server: ::shynur::udds_rpc::Application::ServerImpl {
+        struct [[gnu::weak]] Server: ::shynur::udds_rpc::Application::ServerImpl {
             inline static std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
 
             auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
@@ -376,7 +378,7 @@ namespace seer::urpc {
                 return this->methods.at(m)(x);
             }
         };
-        struct Client: ::shynur::udds_rpc::ClientApp::Operation {
+        struct [[gnu::weak]] Client: ::shynur::udds_rpc::ClientApp::Operation {
             const std::string m;
             const std::string x;
             const std::function<void(const std::exception *, std::string)> callback;
@@ -408,46 +410,87 @@ namespace seer::urpc {
 
                 ::shynur::utils::Logger{"INFO"}
                     << "ClientApp"
-                    << "Addition result == " << result << "!!!";
+                    << "result == " << result << "!!!";
 
                 return op_status;
             }
         };
+
+        inline auto serve(
+            const std::string& service_name, std::function<std::string(std::string)> handler
+        ) {
+            Server::methods[service_name] = std::move(handler);
+
+            auto app = ::shynur::udds_rpc::Application::make_app<Server>({
+                .service = service_name,
+                .entity  = "server",
+            });
+            struct AppRunner {
+                const std::shared_ptr<::shynur::udds_rpc::Application> app;
+                std::thread                                    thread;
+
+                AppRunner(
+                    const std::shared_ptr<::shynur::udds_rpc::Application> app
+                ): app{app}, thread{&::shynur::udds_rpc::Application::run, this->app} {}
+
+                ~AppRunner() {
+                    this->app->stop();
+                    if (this->thread.joinable())
+                        this->thread.join();
+                }
+            };
+            return std::make_shared<AppRunner>(app);
+        }
+
+        inline auto call(
+            const std::string& service_name,
+            std::function<void(const std::exception *, std::string)> callback,
+            const std::string& json
+        ) {
+            auto app = ::shynur::udds_rpc::Application::make_app<Server>({
+                .service = service_name,
+                .entity  = "client",
+            });
+
+            std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(Client{service_name, json, callback});
+        }
     } // namespace _detail
 
+    template <typename R, typename ...Args>
     auto serve(
-        const std::string& service_name, std::function<std::string(std::string)> handler
+        const std::string& service_name, std::function<R(Args...)> handler
     ) {
-        using namespace _detail;
-        Server::methods[service_name] = std::move(handler);
-
-        auto app = ::shynur::udds_rpc::Application::make_app<Server>({
-            .service = service_name,
-            .entity  = "server",
-        });
-        struct AppRunner {
-            const std::shared_ptr<::shynur::udds_rpc::Application> app;
-            const std::thread                                    thread;
-
-            AppRunner(
-                const std::shared_ptr<::shynur::udds_rpc::Application> app
-            ): app{app}, thread{&::shynur::udds_rpc::Application::run, this->app} {}
-
-            ~AppRunner() {this->app->stop();}
-        };
-        return std::make_shared<AppRunner>(app);
+        return _detail::serve(
+            service_name,
+            [handler=std::move(handler)](const std::string& json) -> std::string {
+                const auto args = ::nlohmann::json::parse(json).get<std::tuple<Args...>>();
+                const auto result = std::apply(handler, args);
+                ::shynur::utils::Logger{"INFO"} << "serve" << "result == " << ::nlohmann::json(result).dump();
+                return ::nlohmann::json(result).dump();;
+            }
+        );
     }
 
+    template <typename R, typename ...Args>
     auto call(
         const std::string& service_name,
-        const std::string& json, std::function<void(const std::exception *, std::string)> callback
+        std::function<void(const std::exception *, R)> callback,
+        Args... args
     ) {
-        using namespace _detail;
-        auto app = ::shynur::udds_rpc::Application::make_app<Server>({
-            .service = service_name,
-            .entity  = "client",
-        });
-
-        std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(Client{service_name, json, callback});
+        const auto json = ::nlohmann::json{args...}.dump();
+        ::shynur::utils::Logger{"INFO"} << "call" << "args == " << json;
+        return _detail::call(
+            service_name,
+            [callback=std::move(callback)](const std::exception *e, const std::string& json) {
+                ::shynur::utils::Logger{"INFO"} << "call" << "json == " << json;
+                if (e)
+                    callback(e, R{});
+                else {
+                    const auto result = ::nlohmann::json::parse(json).get<R>();
+                    callback(nullptr, result);
+                }
+            },
+            json
+        );
     }
 }
