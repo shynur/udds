@@ -368,25 +368,28 @@ auto Application::make_app(const Options& options) -> std::shared_ptr<Applicatio
 namespace seer::urpc {
     namespace _detail {
         struct Server: ::shynur::udds_rpc::Application::ServerImpl {
-            static std::unordered_map<std::string, std::function<std::string(std::string) noexcept>> methods;
+            inline static std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
 
             auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
                 const std::string& m, const std::string& x
             ) -> std::string override {
-                return this->methods[m](x);
+                return this->methods.at(m)(x);
             }
         };
         struct Client: ::shynur::udds_rpc::ClientApp::Operation {
+            const std::string m;
             const std::string x;
-            const std::function<void(const std::exception *, std::string) noexcept> callback;
+            const std::function<void(const std::exception *, std::string)> callback;
             Client(
-                const std::string& x, std::function<void(const std::exception *, std::string) noexcept> callback
-            ): x{x}, callback{std::move(callback)} {}
+                const std::string& m,
+                const std::string& x,
+                std::function<void(const std::exception *, std::string)> callback
+            ): m{m}, x{x}, callback{std::move(callback)} {}
 
             auto execute() -> OperationStatus override {
                 std::string result;
 
-                OerationStatus op_status;
+                OperationStatus op_status;
                 try {
                     op_status = this->call_rpc(
                         &::ShynurUrpcProcessor::f, result, this->m, this->x
@@ -413,7 +416,7 @@ namespace seer::urpc {
     } // namespace _detail
 
     auto serve(
-        const std::string& service_name, std::function<std::string(std::string) noexcept> handler
+        const std::string& service_name, std::function<std::string(std::string)> handler
     ) {
         using namespace _detail;
         Server::methods[service_name] = std::move(handler);
@@ -430,18 +433,14 @@ namespace seer::urpc {
                 const std::shared_ptr<::shynur::udds_rpc::Application> app
             ): app{app}, thread{&::shynur::udds_rpc::Application::run, this->app} {}
 
-            ~AppRunner() {
-                this->app->stop();
-                if (this->thread.joinable())
-                    this->thread.join();
-            }
+            ~AppRunner() {this->app->stop();}
         };
         return std::make_shared<AppRunner>(app);
     }
 
     auto call(
         const std::string& service_name,
-        const std::string& json, std::function<void(const std::exception *, std::string) noexcept> callback
+        const std::string& json, std::function<void(const std::exception *, std::string)> callback
     ) {
         using namespace _detail;
         auto app = ::shynur::udds_rpc::Application::make_app<Server>({
@@ -449,6 +448,6 @@ namespace seer::urpc {
             .entity  = "client",
         });
 
-        std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(Client{json, callback});
+        std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(Client{service_name, json, callback});
     }
 }

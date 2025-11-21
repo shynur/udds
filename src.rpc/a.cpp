@@ -17,8 +17,9 @@ int main(const int argc, const char *const argv[]) {
             std::cout << "===== Result =====> " << result << std::endl;
         });
     } else {
-        seer::urpc::serve("Service1", [](auto json) noexcept {
+        auto ptr = seer::urpc::serve("Service2", [](auto json) noexcept {
             return "[" + json + "]";
         });
+        std::this_thread::sleep_for(1min);
     }
 }
