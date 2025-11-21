@@ -5,3 +5,4 @@
 !/urpc.hpp
 !/.gitignore
 !/CMakeLists.txt
+!/compile_flags.txt

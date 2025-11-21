@@ -18,12 +18,12 @@ namespace shynur::utils {
             const auto time_s = std::format(
                 "{}", std::chrono::current_zone()->to_local(this->now)
             );
-            const auto level_color = this->level == "DEBUG" ? "\e[34;1m"
-                                     : this->level == "INFO" ? "\e[32;1m"
-                                     : "\e[31;1m";
+            const auto level_color = this->level == "DEBUG" ? "\033[34;1m"
+                                     : this->level == "INFO" ? "\033[32;1m"
+                                     : "\033[31;1m";
 
             const auto msg = std::format(
-                "{}_{} {}[{}] \e[37;1m{}\e[m{}\n",
+                "{}_{} {}[{}] \033[37;1m{}\033[m{}\n",
                 time_s.substr(0, time_s.find(' ')),
                 time_s.substr(time_s.find(' ') + 1, 12),
                 level_color,
@@ -66,6 +66,7 @@ struct [[gnu::weak]] Application {
     virtual void stop()    = 0;
 
     struct Options {
+        std::string   service;  // 服务名
         std::string   entity;  // server|client
         std::size_t   thread_pool_size = 0;  // (可选) server 线程池数量
     };
@@ -346,7 +347,7 @@ struct [[gnu::weak]] ClientApp: Application {
 
 template <std::derived_from<Application::ServerImpl> UserDefinedServerImpl>
 auto Application::make_app(const Options& options) -> std::shared_ptr<Application> {
-    constexpr auto service_name = "ShynurUrpcProcessor_Service"sv;
+    const auto service_name = options.service + "_Service"s;
     Application *app;
     if (options.entity == "server"s)
         app = new ServerApp<UserDefinedServerImpl>{
@@ -363,3 +364,91 @@ auto Application::make_app(const Options& options) -> std::shared_ptr<Applicatio
     return std::shared_ptr<Application>{app};
 }
 } // namespace shynur::udds_rpc
+
+namespace seer::urpc {
+    namespace _detail {
+        struct Server: ::shynur::udds_rpc::Application::ServerImpl {
+            static std::unordered_map<std::string, std::function<std::string(std::string) noexcept>> methods;
+
+            auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
+                const std::string& m, const std::string& x
+            ) -> std::string override {
+                return this->methods[m](x);
+            }
+        };
+        struct Client: ::shynur::udds_rpc::ClientApp::Operation {
+            const std::string x;
+            const std::function<void(const std::exception *, std::string) noexcept> callback;
+            Client(
+                const std::string& x, std::function<void(const std::exception *, std::string) noexcept> callback
+            ): x{x}, callback{std::move(callback)} {}
+
+            auto execute() -> OperationStatus override {
+                std::string result;
+
+                OerationStatus op_status;
+                try {
+                    op_status = this->call_rpc(
+                        &::ShynurUrpcProcessor::f, result, this->m, this->x
+                    );
+                    switch (op_status) {
+                        case OperationStatus::TIMEOUT:
+                            throw std::runtime_error{"TIMEOUT"};
+                        case OperationStatus::ERROR:
+                            throw std::runtime_error{"ERROR"};
+                    }
+                    callback(nullptr, result);
+                } catch (const std::exception& e) {
+                    callback(&e, "");
+                    op_status = OperationStatus::ERROR;
+                }
+
+                ::shynur::utils::Logger{"INFO"}
+                    << "ClientApp"
+                    << "Addition result == " << result << "!!!";
+
+                return op_status;
+            }
+        };
+    } // namespace _detail
+
+    auto serve(
+        const std::string& service_name, std::function<std::string(std::string) noexcept> handler
+    ) {
+        using namespace _detail;
+        Server::methods[service_name] = std::move(handler);
+
+        auto app = ::shynur::udds_rpc::Application::make_app<Server>({
+            .service = service_name,
+            .entity  = "server",
+        });
+        struct AppRunner {
+            const std::shared_ptr<::shynur::udds_rpc::Application> app;
+            const std::thread                                    thread;
+
+            AppRunner(
+                const std::shared_ptr<::shynur::udds_rpc::Application> app
+            ): app{app}, thread{&::shynur::udds_rpc::Application::run, this->app} {}
+
+            ~AppRunner() {
+                this->app->stop();
+                if (this->thread.joinable())
+                    this->thread.join();
+            }
+        };
+        return std::make_shared<AppRunner>(app);
+    }
+
+    auto call(
+        const std::string& service_name,
+        const std::string& json, std::function<void(const std::exception *, std::string) noexcept> callback
+    ) {
+        using namespace _detail;
+        auto app = ::shynur::udds_rpc::Application::make_app<Server>({
+            .service = service_name,
+            .entity  = "client",
+        });
+
+        std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(Client{json, callback});
+    }
+}

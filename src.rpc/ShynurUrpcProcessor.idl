@@ -1,17 +1,5 @@
-struct UddsTwoDouble {
-    double x;
-    double y;
+exception ShynurUrpc_DontUse_{};
+interface ShynurUrpcProcessor {
+    string ping_(in string arg_);
+    string f(in string m, in string json);
 };
-struct UddsTwoInt {
-    long x;
-    long y;
-};
-
-/*不要修改该行*/exception ShynurUrpc_DontUse_{};interface ShynurUrpcProcessor{string ping_(in string arg_);
-
-/* >>>>>>>>>> 自定义 RPC 接口 >>>>>>>>>>>>> */
-    long addition(in long x, in long y);  // 示例
-    UddsTwoInt floor(in UddsTwoDouble args);  // 示例: 取整
-/* <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-/*不要修改该行*/};
