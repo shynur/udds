@@ -456,7 +456,7 @@ namespace seer::urpc {
         }
     } // namespace _detail
 
-    template <typename R, typename ...Args>
+    template <typename R, typename... Args>
     auto serve(
         const std::string& service_name, std::function<R(Args...)> handler
     ) {
@@ -477,40 +477,37 @@ namespace seer::urpc {
         );
     }
 
-    template <typename R, typename ...Args>
+    template <typename R, typename... Args>
     auto call(
         const std::string& service_name,
         std::function<void(const std::exception *, R)> callback,
         Args... args
     ) {
-        const auto json = ::nlohmann::json{args...}.dump();
+        const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
         ::shynur::utils::Logger{"INFO"} << "call" << "args == " << json;
+
         return _detail::call(
             service_name,
-            [callback=std::move(callback)](const std::exception *e, const std::string& json) {
-                ::shynur::utils::Logger{"INFO"} << "call" << "json == " << json;
-                if (e)
-                    callback(e, R{});
-                else {
-                    const auto result = ::nlohmann::json::parse(json).get<R>();
-                    callback(nullptr, result);
-                }
+            [callback=std::move(callback)](const std::exception *const e, const std::string& json) {
+                ::shynur::utils::Logger{"INFO"} << "call" << "json ==" << json;
+                callback(e, !e ? ::nlohmann::json::parse(json).get<R>() : R{});
             },
             json
         );
     }
-    template <typename ...Args>
+    template <typename... Args>
     auto call(
         const std::string& service_name,
         std::function<void(const std::exception *)> callback,
         Args... args
     ) {
-        const auto json = ::nlohmann::json{args...}.dump();
+        const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
         ::shynur::utils::Logger{"INFO"} << "call" << "args == " << json;
+
         return _detail::call(
             service_name,
-            [callback=std::move(callback)](const std::exception *e, const std::string& json) {
-                ::shynur::utils::Logger{"INFO"} << "call" << "json == " << json;
+            [callback=std::move(callback)](const std::exception *const e, const std::string& json) {
+                ::shynur::utils::Logger{"INFO"} << "call" << "json ==" << json;
                 callback(e);
             },
             json

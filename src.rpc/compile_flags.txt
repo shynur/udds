@@ -5,3 +5,4 @@
 -W
 -ferror-limit=0
 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/14
+-I/opt/fastdds/include

@@ -1,6 +1,4 @@
 #include "urpc.hpp"
-#include <exception>
-#include <string>
 
 int main(const int argc, const char *const argv[]) {
     auto options = ::shynur::udds_rpc::Application::Options{};
