@@ -463,7 +463,8 @@ namespace seer::urpc {
         return _detail::serve(
             service_name,
             [handler=std::move(handler)](const std::string& json) -> std::string {
-                const auto args = ::nlohmann::json::parse(json).get<std::tuple<Args...>>();
+                const auto args = ::nlohmann::json::parse(json)
+                                  .get<std::tuple<std::decay_t<Args>...>>();
                 if constexpr (std::is_same_v<R, void>) {
                     std::apply(handler, args);
                     ::shynur::utils::Logger{"INFO"} << "serve" << "result == void";
