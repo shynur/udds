@@ -5,6 +5,7 @@
 #pragma once
 #include <bits/stdc++.h>
 using namespace std::literals;
+#include "shynur-polyfill.hpp"
 
 namespace shynur::utils {
     struct [[gnu::weak]] Logger {
@@ -15,17 +16,23 @@ namespace shynur::utils {
         : level{level}, now{std::chrono::system_clock::now()} {}
 
         ~Logger() {
-            const auto time_s = std::format(
-                "{}", std::chrono::current_zone()->to_local(this->now)
-            );
+            const auto time_s = [this] {
+                const auto t = std::chrono::system_clock::to_time_t(this->now);
+                auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(this->now.time_since_epoch()) % 1000;
+                const auto tm = std::localtime(&t);
+                return (
+                    std::ostringstream{}
+                    << std::put_time(tm, "%Y-%m-%d_%H:%M:%S")
+                    << '.' << std::setw(3) << std::setfill('0') << ms.count()
+                ).str();
+            }();
             const auto level_color = this->level == "DEBUG" ? "\033[34;1m"
                                      : this->level == "INFO" ? "\033[32;1m"
                                      : "\033[31;1m";
 
             const auto msg = std::format(
-                "{}_{} {}[{}] \033[37;1m{}\033[m{}\n",
-                time_s.substr(0, time_s.find(' ')),
-                time_s.substr(time_s.find(' ') + 1, 12),
+                "{} {}[{}] \033[37;1m{}\033[m{}\n",
+                time_s,
                 level_color,
                 this->level,
                 this->context,
@@ -34,7 +41,17 @@ namespace shynur::utils {
 
             (this->level == "ERROR" ? std::cerr : std::clog) << msg;
         }
-        auto& operator<<(const auto& v) {
+        #ifndef __cpp_concepts
+            template <typename T>
+        #endif
+        auto& operator<<(const
+        #ifdef __cpp_concepts
+            auto
+        #else
+            T
+        #endif
+            & v
+        ) {
             if (this->context.empty())
                 this->context = (std::ostringstream{} << v).str();
             else
@@ -84,13 +101,27 @@ struct [[gnu::weak]] Application {
             return "";
         }
     };
-    template <std::derived_from<ServerImpl> UserDefinedServerImpl>
+    template <
+    #ifdef __cpp_lib_concepts
+        std::derived_from<ServerImpl>
+    #else
+        typename
+    #endif
+        UserDefinedServerImpl
+    >
     static auto make_app(const Options& options) -> std::shared_ptr<Application>;
 };
 
-template <std::derived_from<Application::ServerImpl> UserDefinedServerImpl>
+template <
+    #ifdef __cpp_lib_concepts
+        std::derived_from<Application::ServerImpl>
+    #else
+        typename
+    #endif
+    UserDefinedServerImpl
+>
 class ServerApp: public Application {
-    std::atomic_flag                                   stopped_     = ATOMIC_FLAG_INIT;
+    std::atomic_bool                                   stopped_     = false;
     ::eprosima::fastdds::dds::DomainParticipant *const participant_ = [] {
         const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
         if (!factory)
@@ -141,7 +172,7 @@ class ServerApp: public Application {
         }
     }
     void run() override {
-        if (this->stopped_.test())
+        if (this->stopped_)
             return;
 
         this->server_->run();
@@ -150,7 +181,7 @@ class ServerApp: public Application {
             << "Server running";
     }
     void stop() override {
-        this->stopped_.test_and_set();
+        this->stopped_ = true;
         this->server_->stop();
 
         ::shynur::utils::Logger{"INFO"}
@@ -162,7 +193,13 @@ class ServerApp: public Application {
 struct [[gnu::weak]] ClientApp: Application {
     struct Operation {
         enum class OperationStatus {SUCCESS, TIMEOUT, ERROR};
-        using enum OperationStatus;
+        #ifdef __cpp_using_enum
+            using enum OperationStatus;
+        #else
+            static constexpr OperationStatus SUCCESS = OperationStatus::SUCCESS;
+            static constexpr OperationStatus TIMEOUT = OperationStatus::TIMEOUT;
+            static constexpr OperationStatus ERROR   = OperationStatus::ERROR;
+        #endif
         virtual auto execute() -> OperationStatus = 0;
         virtual ~Operation()              = default;
       protected:
@@ -241,22 +278,32 @@ struct [[gnu::weak]] ClientApp: Application {
         }
     }
     void stop() override {
-        this->stopped_.test_and_set();
+        this->stopped_ = true;
         ::shynur::utils::Logger{"INFO"}
             << "ClientApp"
             << "Client execution stopped";
     }
-    auto call(std::derived_from<Operation> auto op) {
+    #ifndef __cpp_concepts
+        template <typename T>
+    #endif
+    auto call(
+        #ifdef __cpp_lib_concepts
+            std::derived_from<Operation> auto
+        #else
+            T
+        #endif
+        op
+    ) {
         this->set_operation(std::move(op));
         this->run();
     }
   protected:
     void run() override {
-        if (this->stopped_.test())
+        if (this->stopped_)
             return;
 
         if (!this->ping_server()) {
-            if (!this->stopped_.test()) {
+            if (!this->stopped_) {
                  ::shynur::utils::Logger{"INFO"}
                     << "ClientApp"
                     << "Server not reachable. Stopping client execution...";
@@ -264,7 +311,7 @@ struct [[gnu::weak]] ClientApp: Application {
             }
         }
 
-        if (!this->stopped_.test())
+        if (!this->stopped_)
             try {
                 if (this->operation_->execute() != Operation::SUCCESS)
                     throw std::runtime_error{
@@ -277,7 +324,17 @@ struct [[gnu::weak]] ClientApp: Application {
                 throw std::runtime_error{"Error occurred during RPC"};
             }
     }
-    void set_operation(std::derived_from<Operation> auto op) {
+    #ifndef __cpp_concepts
+        template <typename T>
+    #endif
+    void set_operation(
+        #ifdef __cpp_lib_concepts
+            std::derived_from<Operation> auto
+        #else
+            T
+        #endif
+        op
+    ) {
         op.Operation::client_ = this->client_;
         this->operation_ = std::unique_ptr<Operation>{
             new auto{std::move(op)}
@@ -299,7 +356,7 @@ struct [[gnu::weak]] ClientApp: Application {
 
         auto reachable = false;
         for (auto i = 0u; i < this->config.connection_attempts; i++)
-            if (!this->stopped_.test()) {
+            if (!this->stopped_) {
                 ::shynur::utils::Logger{"DEBUG"}
                    << "ClientApp"
                    << "Trying to reach server, attempt "
@@ -326,7 +383,7 @@ struct [[gnu::weak]] ClientApp: Application {
         return reachable;
      }
 
-    std::atomic_flag                             stopped_     = ATOMIC_FLAG_INIT;
+    std::atomic_bool                             stopped_     = false;
     ::eprosima::fastdds::dds::DomainParticipant *participant_ = [] {
         const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
         if (!factory)
@@ -345,7 +402,14 @@ struct [[gnu::weak]] ClientApp: Application {
     std::unique_ptr<Operation>    operation_;
 };
 
-template <std::derived_from<Application::ServerImpl> UserDefinedServerImpl>
+template <
+    #ifdef __cpp_lib_concepts
+        std::derived_from<Application::ServerImpl>
+    #else
+        typename
+    #endif
+    UserDefinedServerImpl
+>
 auto Application::make_app(const Options& options) -> std::shared_ptr<Application> {
     const auto service_name = options.service + "_Service"s;
     Application *app;

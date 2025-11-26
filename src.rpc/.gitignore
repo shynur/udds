@@ -7,3 +7,4 @@
 !/CMakeLists.txt
 !/compile_flags.txt
 !/nlohmann/json.hpp
+!/shynur-polyfill.hpp

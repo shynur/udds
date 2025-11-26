@@ -4,7 +4,7 @@ SHELL = /bin/bash -O globstar
 all:
 	mkdir -p build.cmake
 	cd build.cmake;  \
-	CXX=g++-14 CXXFLAGS='-std=c++26 -O0 -g3' cmake -DCMAKE_BUILD_TYPE=Debug ..;  \
+	CXX=g++-14 CXXFLAGS+=' -O0 -g3' cmake -DCMAKE_BUILD_TYPE=Debug ..;  \
 	$(MAKE);  \
 	mv -f urpc ..
 
@@ -13,7 +13,7 @@ clean:
 	for f in ./* ./.*; do  \
 		f=`basename -- $$f`;  \
 		case "$$f" in  \
-			nlohmann | Makefile | CMakeLists.txt | .gitignore | a.cpp | urpc.hpp | ShynurUrpcProcessor.idl | .vscode | compile_flags.txt) :;;  \
+			shynur-polyfill.hpp | nlohmann | Makefile | CMakeLists.txt | .gitignore | a.cpp | urpc.hpp | ShynurUrpcProcessor.idl | .vscode | compile_flags.txt) :;;  \
 			*) rm -rf "./$$f";;  \
 		esac;  \
 	done

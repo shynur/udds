@@ -7,7 +7,7 @@ int main(const int argc, const char *const argv[]) {
             options.entity = "server";
         else if (arg == "-c")
             options.entity = "client";
-        else if (arg.starts_with("--thread_pool_size="))
+        else if (arg.rfind("--thread_pool_size=", 0) == 0)
             options.thread_pool_size = std::stoul(arg.substr(19));
 
     if (options.entity == "client")
