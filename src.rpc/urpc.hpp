@@ -1,6 +1,6 @@
 /*
  * Author: 谢骐 <shynur@outlook.com>
- * URL: https://github.com/shynur/udds/blob/125d701aac1bd4036ebb083e04eff02b05a5034f/src.rpc/urpc.hpp
+ * URL: https://github.com/shynur/udds
  */
 #pragma once
 #include <bits/stdc++.h>
@@ -120,21 +120,7 @@ template <
     #endif
     UserDefinedServerImpl
 >
-class ServerApp: public Application {
-    std::atomic_bool                                   stopped_     = false;
-    ::eprosima::fastdds::dds::DomainParticipant *const participant_ = [] {
-        const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
-        if (!factory)
-            throw std::runtime_error{"shynur.urpc Failed to get participant factory instance"};
-
-        const auto participant = factory->create_participant_with_default_profile();
-        if (!participant)
-            throw std::runtime_error{"shynur.urpc Participant initialization failed"};
-        return participant;
-    }();
-    std::shared_ptr<ServerImpl> server_impl_{(ServerImpl *)new UserDefinedServerImpl};
-    std::shared_ptr<::ShynurUrpcProcessorServer> server_;
-  public:
+struct ServerApp: Application {
     const struct Config {
         const std::size_t thread_pool_size = 0;
     } config;
@@ -188,6 +174,20 @@ class ServerApp: public Application {
             << "ServerApp"
             << "Server execution stopping...";
     }
+  private:
+    std::atomic_bool                                   stopped_     = false;
+    ::eprosima::fastdds::dds::DomainParticipant *const participant_ = [] {
+        const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
+        if (!factory)
+            throw std::runtime_error{"shynur.urpc Failed to get participant factory instance"};
+
+        const auto participant = factory->create_participant_with_default_profile();
+        if (!participant)
+            throw std::runtime_error{"shynur.urpc Participant initialization failed"};
+        return participant;
+    }();
+    std::shared_ptr<ServerImpl> server_impl_{(ServerImpl *)new UserDefinedServerImpl};
+    std::shared_ptr<::ShynurUrpcProcessorServer> server_;
 };
 
 struct [[gnu::weak]] ClientApp: Application {
