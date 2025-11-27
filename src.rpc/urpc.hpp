@@ -9,6 +9,7 @@ using namespace std::literals;
 
 namespace shynur::utils {
     struct [[gnu::weak]] Logger {
+        static inline std::atomic_bool enabled = false;
         const std::string_view                                   level;
         const std::chrono::time_point<std::chrono::system_clock> now;
 
@@ -39,7 +40,8 @@ namespace shynur::utils {
                 this->oss.str()
             );
 
-            (this->level == "ERROR" ? std::cerr : std::clog) << msg;
+            if (std::decay_t<decltype(*this)>::enabled)
+                (this->level == "ERROR" ? std::cerr : std::clog) << msg;
         }
         #ifndef __cpp_concepts
             template <typename T>

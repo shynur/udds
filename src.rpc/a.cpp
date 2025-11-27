@@ -10,6 +10,7 @@ int main(const int argc, const char *const argv[]) {
         else if (arg.rfind("--thread_pool_size=", 0) == 0)
             options.thread_pool_size = std::stoul(arg.substr(19));
 
+    ::shynur::utils::Logger::enabled = true;
     if (options.entity == "client")
         rbk::urpc::call(
             "Service1",
