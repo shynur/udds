@@ -20,7 +20,7 @@ namespace shynur::utils {
                 const auto t = std::chrono::system_clock::to_time_t(this->now);
                 auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(this->now.time_since_epoch()) % 1000;
                 const auto tm = std::localtime(&t);
-                return (
+                return static_cast<const std::ostringstream&>(
                     std::ostringstream{}
                     << std::put_time(tm, "%Y-%m-%d_%H:%M:%S")
                     << '.' << std::setw(3) << std::setfill('0') << ms.count()
@@ -53,7 +53,9 @@ namespace shynur::utils {
             & v
         ) {
             if (this->context.empty())
-                this->context = (std::ostringstream{} << v).str();
+                this->context = static_cast<const std::ostringstream&>(
+                    std::ostringstream{} << v
+                ).str();
             else
                 this->oss << ' ' << v;
             return *this;

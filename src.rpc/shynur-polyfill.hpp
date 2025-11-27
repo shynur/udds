@@ -8,7 +8,12 @@ namespace shynur::polyfill {
     template <typename... Args>
     std::string format(const std::string& f, Args&&... args) {
         auto argss = std::vector<std::string>{};
-        ((argss.push_back((std::ostringstream{} << std::forward<decltype(args)>(args)).str())), ...);
+        ((argss.push_back(
+            static_cast<const std::ostringstream&>(
+                std::ostringstream{} << std::forward<decltype(args)>(args)
+            ).str()
+         )),
+         ...);
         auto it = argss.cbegin();
 
         auto s = ""s;
