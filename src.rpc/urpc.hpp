@@ -203,8 +203,29 @@ struct [[gnu::weak]] ClientApp: Application {
         virtual auto execute() -> OperationStatus = 0;
         virtual ~Operation()              = default;
       protected:
+        #ifndef __cpp_concepts
+            template <typename T, typename R, typename... Args>
+        #endif
         auto call_rpc(
-            const auto rpc, auto&& result, auto&&... args
+            const
+            #ifdef __cpp_concepts
+                auto
+            #else
+                T
+            #endif
+            rpc,
+            #ifdef __cpp_concepts
+                auto
+            #else
+                R
+            #endif
+            && result,
+            #ifdef __cpp_concepts
+                auto
+            #else
+                Args
+            #endif
+            &&... args
         ) /* final */ {
             if (auto client = this->client_.lock()) {
                 auto future = std::mem_fn(rpc)(
@@ -431,7 +452,7 @@ auto Application::make_app(const Options& options) -> std::shared_ptr<Applicatio
 
 #include "nlohmann/json.hpp"
 
-namespace seer::urpc {
+namespace rbk::urpc {
     namespace _detail {
         struct [[gnu::weak]] Server: ::shynur::udds_rpc::Application::ServerImpl {
             inline static std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};

@@ -11,7 +11,7 @@ int main(const int argc, const char *const argv[]) {
             options.thread_pool_size = std::stoul(arg.substr(19));
 
     if (options.entity == "client")
-        seer::urpc::call(
+        rbk::urpc::call(
             "Service1",
             std::function{[](const std::exception *err, std::string result) noexcept {
                 if (err != nullptr)
@@ -21,7 +21,7 @@ int main(const int argc, const char *const argv[]) {
             2, "ppppppp"
         );
     else {
-        auto ptr = seer::urpc::serve(
+        auto ptr = rbk::urpc::serve(
             "Service1",
             std::function{[](int i, std::string s) noexcept {
                 return std::to_string(i) + ": " + s;
