@@ -9,7 +9,9 @@ using namespace std::literals;
 
 namespace shynur::utils {
     struct [[gnu::weak]] Logger {
-        static inline std::atomic_bool enabled = false;
+        static inline std::atomic_bool enabled = std::string{
+            std::getenv("URPC_LOG") or ""
+        }.length() >= 1;
         const std::string_view                                   level;
         const std::chrono::time_point<std::chrono::system_clock> now;
 
