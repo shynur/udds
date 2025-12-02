@@ -575,16 +575,15 @@ namespace rbk::urpc {
         std::function<void(const std::exception *, R)> callback,
         Args... args
     ) {
-        const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
-
         return _detail::call(
             service_name,
-            [callback=std::move(callback)](const std::exception *const e, const std::string& json) {
+            [callback=std::move(callback)](
+                const std::exception *const e, const std::string& json
+            ) {
                 ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
                 callback(e, !e ? ::nlohmann::json::parse(json).get<R>() : R{});
             },
-            json
+            sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump()
         );
     }
     template <typename... Args>
@@ -593,16 +592,15 @@ namespace rbk::urpc {
         std::function<void(const std::exception *)> callback,
         Args... args
     ) {
-        const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
-
         return _detail::call(
             service_name,
-            [callback=std::move(callback)](const std::exception *const e, const std::string& json) {
+            [callback=std::move(callback)](
+                const std::exception *const e, const std::string& json
+            ) {
                 ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
                 callback(e);
             },
-            json
+            sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump()
         );
     }
 }
