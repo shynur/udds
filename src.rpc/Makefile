@@ -4,7 +4,7 @@ SHELL = /bin/bash -O globstar
 all:
 	mkdir -p build.cmake
 	cd build.cmake;  \
-	CXX=g++-14 CXXFLAGS+=' -O0 -g3' cmake -DCMAKE_BUILD_TYPE=Debug ..;  \
+	CXXFLAGS+=' -O0 -g3' cmake -DCMAKE_BUILD_TYPE=Debug ..;  \
 	$(MAKE);  \
 	mv -f urpc ..
 
