@@ -89,7 +89,7 @@ struct [[gnu::weak]] Application {
     struct Options {
         std::string   service;  // 服务名
         std::string   entity;  // server|client
-        std::size_t   thread_pool_size = 0;  // (可选) server 线程池数量
+        std::size_t   thread_pool_size = 2;  // (可选) server 线程池数量
     };
 
     struct ServerImpl: ::ShynurUrpcProcessorServerImplementation,
@@ -132,20 +132,22 @@ struct ServerApp: Application {
     ServerApp(
         const std::string_view service_name, const Config& config
     ): config{config}, server_{[&, this] {
-          const auto server = ::create_ShynurUrpcProcessorServer(
-              *this->participant_,
-              std::string{service_name}.c_str(),
-              ::eprosima::fastdds::dds::ReplierQos{},
-              this->config.thread_pool_size,
-              this->server_impl_
-          );
-          if (!server)
-              throw std::runtime_error{"Server initialization failed"};
-          return server;
-      }()} {
-        ::shynur::utils::Logger{"INFO"}
-            << "ServerApp"
-            << "Server initialized with ID: "
+        const auto server = ::create_ShynurUrpcProcessorServer(
+            *this->participant_,
+            std::string{service_name}.c_str(),
+            [] {
+                auto qos = ::eprosima::fastdds::dds::ReplierQos{};
+                return qos;
+            }(),
+            this->config.thread_pool_size,
+            this->server_impl_
+        );
+        if (!server)
+            throw std::runtime_error{"Server initialization failed"};
+        return server;
+    }()} {
+        ::shynur::utils::Logger{"DEBUG"}
+            << "Server Initialized"
             << this->participant_->guid().guidPrefix;
     }
     ~ServerApp() override {
@@ -167,16 +169,16 @@ struct ServerApp: Application {
 
         this->server_->run();
         ::shynur::utils::Logger{"INFO"}
-            << "ServerApp"
-            << "Server running";
+            << "Server Running"
+            << this->participant_->guid().guidPrefix;
     }
     void stop() override {
         this->stopped_ = true;
         this->server_->stop();
 
         ::shynur::utils::Logger{"INFO"}
-            << "ServerApp"
-            << "Server execution stopping...";
+            << "Server Stopped"
+            << this->participant_->guid().guidPrefix;
     }
   private:
     std::atomic_bool                                   stopped_     = false;
@@ -236,26 +238,26 @@ struct [[gnu::weak]] ClientApp: Application {
                     client, std::forward<decltype(args)>(args)...
                 );
                 if (future.wait_for(1s) != std::future_status::ready) {
-                    ::shynur::utils::Logger{"INFO"}
-                        << "ClientApp"
-                        << "Timed out";
+                    ::shynur::utils::Logger{"ERROR"}
+                        << "Client RPC"
+                        << "Timed Out";
                     return TIMEOUT;
                 }
                 try {
                     result = future.get();
                     ::shynur::utils::Logger{"INFO"}
-                        << "ClientApp"
-                        << "operation successful";
+                        << "Client RPC"
+                        << "Success";
                     return SUCCESS;
                 } catch (const ::eprosima::fastdds::dds::rpc::RpcBrokenPipeException&) {
-                    ::shynur::utils::Logger{"INFO"}
-                        << "ClientApp"
+                    ::shynur::utils::Logger{"ERROR"}
+                        << "Client RPC"
                         << "Server not reachable";
                     return ERROR;
                 } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
                     ::shynur::utils::Logger{"ERROR"}
-                        << "ClientApp"
-                        << "RPC exception occurred: " << e.what();
+                        << "Client RPC"
+                        << "Exception:" << e.what();
                     return ERROR;
                 }
             }
@@ -277,16 +279,18 @@ struct [[gnu::weak]] ClientApp: Application {
             const auto client = ::create_ShynurUrpcProcessorClient(
                 *this->participant_,
                 std::string{service_name}.c_str(),
-                ::eprosima::fastdds::dds::RequesterQos{}
+                [] {
+                    auto qos = ::eprosima::fastdds::dds::RequesterQos{};
+                    return qos;
+                }()
             );
             if (!client)
                 throw std::runtime_error{"Failed to create client"};
             return client;
         }()
     } {
-        ::shynur::utils::Logger{"INFO"}
-            << "ClientApp"
-            << "Client initialized with ID: "
+        ::shynur::utils::Logger{"DEBUG"}
+            << "Client Initialized"
             << this->participant_->guid().guidPrefix;
     }
     ~ClientApp() override {
@@ -305,8 +309,8 @@ struct [[gnu::weak]] ClientApp: Application {
     void stop() override {
         this->stopped_ = true;
         ::shynur::utils::Logger{"INFO"}
-            << "ClientApp"
-            << "Client execution stopped";
+            << "Client Stopped"
+            << this->participant_->guid().guidPrefix;
     }
     #ifndef __cpp_concepts
         template <typename T>
@@ -329,9 +333,9 @@ struct [[gnu::weak]] ClientApp: Application {
 
         if (!this->ping_server()) {
             if (!this->stopped_) {
-                 ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "Server not reachable. Stopping client execution...";
+                 ::shynur::utils::Logger{"ERROR"}
+                    << "Client RPC"
+                    << "Server not reachable.  Aborting this rpc...";
                 throw std::runtime_error{"Server not reachable"};
             }
         }
@@ -344,8 +348,8 @@ struct [[gnu::weak]] ClientApp: Application {
                     };
             } catch (const std::runtime_error& e) {
                 ::shynur::utils::Logger{"ERROR"}
-                    << "ClientApp"
-                    << e.what() + ". Stopping client execution..."s;
+                    << "Client RPC"
+                    << "Exception:" << e.what();
                 throw std::runtime_error{"Error occurred during RPC"};
             }
     }
@@ -371,7 +375,7 @@ struct [[gnu::weak]] ClientApp: Application {
                 const auto op_status = this->call_rpc(
                     &::ShynurUrpcProcessor::ping_, ""s, ""s
                 );
-                ::shynur::utils::Logger{"INFO"} << "Ping";
+                ::shynur::utils::Logger{"DEBUG"} << "Client" << "Ping server";
                 return op_status;
             }
         };
@@ -383,9 +387,9 @@ struct [[gnu::weak]] ClientApp: Application {
         for (auto i = 0u; i < this->config.connection_attempts; i++)
             if (!this->stopped_) {
                 ::shynur::utils::Logger{"DEBUG"}
-                   << "ClientApp"
-                   << "Trying to reach server, attempt "
-                   << (i + 1) << "/" << this->config.connection_attempts;
+                   << "Client"
+                   << "Trying to ping server"
+                   << '(' << (i + 1) << "/" << this->config.connection_attempts << ')';
 
                 std::this_thread::sleep_for(1s);
 
@@ -393,15 +397,10 @@ struct [[gnu::weak]] ClientApp: Application {
                 if (reachable)
                     break;
 
-                ::shynur::utils::Logger{"DEBUG"}
-                    << "ClientApp"
-                    << "Server not reachable, attempt "
-                    << (i + 1) << "/" << this->config.connection_attempts << " failed.";
-
                 if (i == this->config.connection_attempts - 1)
                     ::shynur::utils::Logger{"ERROR"}
-                        << "ClientApp"
-                        << "Failed to connect to server";
+                        << "Client"
+                        << "All ping failed";
             }
 
         this->operation_ = std::move(original_operation);
@@ -498,8 +497,8 @@ namespace rbk::urpc {
                 }
 
                 ::shynur::utils::Logger{"INFO"}
-                    << "ClientApp"
-                    << "result == " << result << "!!!";
+                    << "Client RPC Result"
+                    << result;
 
                 return op_status;
             }
@@ -556,11 +555,11 @@ namespace rbk::urpc {
                                   .get<std::tuple<std::decay_t<Args>...>>();
                 if constexpr (std::is_same_v<R, void>) {
                     std::apply(handler, args);
-                    ::shynur::utils::Logger{"INFO"} << "serve" << "result == void";
+                    ::shynur::utils::Logger{"INFO"} << "serve" << "==> void";
                     return "";
                 } else {
                     const auto result = std::apply(handler, args);
-                    ::shynur::utils::Logger{"INFO"} << "serve" << "result == " << ::nlohmann::json(result).dump();
+                    ::shynur::utils::Logger{"INFO"} << "serve" << "==>" << ::nlohmann::json(result).dump();
                     return ::nlohmann::json(result).dump();
                 }
             }
@@ -574,12 +573,12 @@ namespace rbk::urpc {
         Args... args
     ) {
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        ::shynur::utils::Logger{"INFO"} << "call" << "args == " << json;
+        ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
 
         return _detail::call(
             service_name,
             [callback=std::move(callback)](const std::exception *const e, const std::string& json) {
-                ::shynur::utils::Logger{"INFO"} << "call" << "json ==" << json;
+                ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
                 callback(e, !e ? ::nlohmann::json::parse(json).get<R>() : R{});
             },
             json
@@ -592,12 +591,12 @@ namespace rbk::urpc {
         Args... args
     ) {
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        ::shynur::utils::Logger{"INFO"} << "call" << "args == " << json;
+        ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
 
         return _detail::call(
             service_name,
             [callback=std::move(callback)](const std::exception *const e, const std::string& json) {
-                ::shynur::utils::Logger{"INFO"} << "call" << "json ==" << json;
+                ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
                 callback(e);
             },
             json
