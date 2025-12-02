@@ -294,6 +294,9 @@ struct [[gnu::weak]] ClientApp: Application {
             << this->participant_->guid().guidPrefix;
     }
     ~ClientApp() override {
+        ::shynur::utils::Logger{"DEBUG"}
+            << "Client Destroying"
+            << this->participant_->guid().guidPrefix;
         // As a precautionary measure, delete the server here because
         // `this->participant_->delete_contained_entities()` does not
         // automatically disable the service.  This line can be removed
@@ -375,7 +378,7 @@ struct [[gnu::weak]] ClientApp: Application {
                 const auto op_status = this->call_rpc(
                     &::ShynurUrpcProcessor::ping_, ""s, ""s
                 );
-                ::shynur::utils::Logger{"DEBUG"} << "Client" << "Ping server";
+                ::shynur::utils::Logger{"DEBUG"} << "Client" << "Tried ping server";
                 return op_status;
             }
         };
