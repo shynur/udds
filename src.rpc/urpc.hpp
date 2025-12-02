@@ -167,10 +167,10 @@ struct ServerApp: Application {
         if (this->stopped_)
             return;
 
-        this->server_->run();
         ::shynur::utils::Logger{"INFO"}
             << "Server Running"
             << this->participant_->guid().guidPrefix;
+        this->server_->run();
     }
     void stop() override {
         this->stopped_ = true;
