@@ -16,8 +16,9 @@ int main(const int argc, const char *const argv[]) {
             "Service1",
             std::function{[](const std::exception *err, std::string result) noexcept {
                 if (err != nullptr)
-                    return;
-                std::cout << "===== Result =====> " << result << std::endl;
+                    std::cout << "===== Error =====> " << err->what() << std::endl;
+                else
+                    std::cout << "===== Result =====> " << result << std::endl;
             }},
             2, "ppppppp"
         );

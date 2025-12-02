@@ -1,12 +1,18 @@
 SHELL = /bin/bash -O globstar
 
-.PHONY: all
-all:
-	mkdir -p build.cmake
+urpc: FORCE
+	$(MAKE) build.cmake/Makefile
+	cd build.cmake; $(MAKE)
+	mv -f build.cmake/urpc .
+
+build.cmake/Makefile: CMakeLists.txt ShynurUrpcProcessor.idl | build.cmake/
 	cd build.cmake;  \
-	CXXFLAGS+=' -O0 -g3' cmake -DCMAKE_BUILD_TYPE=Debug ..;  \
-	$(MAKE);  \
-	mv -f urpc ..
+	CXXFLAGS+=' -O0 -g3' CMAKE_GENERATOR='Unix Makefiles' cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+%/:
+	mkdir -p $@
+
+.PHONY: FORCE
 
 .PHONY: clean
 clean:

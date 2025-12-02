@@ -252,7 +252,7 @@ struct [[gnu::weak]] ClientApp: Application {
                 } catch (const ::eprosima::fastdds::dds::rpc::RpcBrokenPipeException&) {
                     ::shynur::utils::Logger{"ERROR"}
                         << "Client RPC"
-                        << "Server not reachable";
+                        << "Server Disconnected";
                     return ERROR;
                 } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
                     ::shynur::utils::Logger{"ERROR"}
@@ -344,17 +344,7 @@ struct [[gnu::weak]] ClientApp: Application {
         }
 
         if (!this->stopped_)
-            try {
-                if (this->operation_->execute() != Operation::SUCCESS)
-                    throw std::runtime_error{
-                        "shynur.urpc Operation failed or interrupted"
-                    };
-            } catch (const std::runtime_error& e) {
-                ::shynur::utils::Logger{"ERROR"}
-                    << "Client RPC"
-                    << "Exception:" << e.what();
-                throw std::runtime_error{"Error occurred during RPC"};
-            }
+            this->operation_->execute();
     }
     #ifndef __cpp_concepts
         template <typename T>
@@ -481,28 +471,35 @@ namespace rbk::urpc {
 
             auto execute() -> OperationStatus override {
                 std::string result;
-
                 OperationStatus op_status;
+
                 try {
                     op_status = this->call_rpc(
                         &::ShynurUrpcProcessor::f, result, this->m, this->x
                     );
-                    switch (op_status) {
-                        case OperationStatus::TIMEOUT:
-                            throw std::runtime_error{"TIMEOUT"};
-                        case OperationStatus::ERROR:
-                            throw std::runtime_error{"ERROR"};
-                    }
-                    callback(nullptr, result);
                 } catch (const std::exception& e) {
                     callback(&e, "");
-                    op_status = OperationStatus::ERROR;
+                    return OperationStatus::ERROR;
                 }
 
-                ::shynur::utils::Logger{"INFO"}
-                    << "Client RPC Result"
-                    << result;
-
+                switch (op_status) {
+                    case OperationStatus::TIMEOUT: {
+                        const auto e = std::runtime_error{"Client.RPC Timed Out"};
+                        callback(&e, "");
+                        break;
+                    }
+                    case OperationStatus::ERROR: {
+                        const auto e = std::runtime_error{"Client.RPC Error"};
+                        callback(&e, "");
+                        break;
+                    }
+                    case OperationStatus::SUCCESS: {
+                        ::shynur::utils::Logger{"INFO"}
+                            << "Client RPC Result"
+                            << result;
+                        callback(nullptr, result);
+                    }
+                }
                 return op_status;
             }
         };
@@ -569,42 +566,62 @@ namespace rbk::urpc {
         );
     }
 
-    template <typename R, typename... Args>
-    auto call(
+    template </*del*/typename R, typename... Args>
+    void call(
         const std::string& service_name,
-        std::function<void(const std::exception *, R)> callback,
+        std::function<void(const std::exception *, /*del*/R)> callback,
         Args... args
     ) {
+        const auto callback_ = std::shared_ptr<std::decay_t<decltype(callback)>>{
+            new std::decay_t<decltype(callback)>{
+                std::move(callback)
+            }
+        };
+
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
         ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
 
-        return _detail::call(
-            service_name,
-            [callback=std::move(callback)](
-                const std::exception *const e, const std::string& json
-            ) {
-                callback(e, !e ? ::nlohmann::json::parse(json).get<R>() : R{});
-            },
-            json
-        );
+        try {
+            _detail::call(
+                service_name,
+                [callback_](
+                    const std::exception *const e, const std::string& json
+                ) {
+                    (*callback_)(e, /*del*/!e ? ::nlohmann::json::parse(json).get<R>() : R{});
+                },
+                json
+            );
+        } catch (const std::exception& e) {
+            (*callback_)(&e, /*del*/R{});
+        }
     }
     template <typename... Args>
-    auto call(
+    void call(
         const std::string& service_name,
         std::function<void(const std::exception *)> callback,
         Args... args
     ) {
+        const auto callback_ = std::shared_ptr<std::decay_t<decltype(callback)>>{
+            new std::decay_t<decltype(callback)>{
+                std::move(callback)
+            }
+        };
+
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
         ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
 
-        return _detail::call(
-            service_name,
-            [callback=std::move(callback)](
-                const std::exception *const e, const std::string& json
-            ) {
-                callback(e);
-            },
-            json
-        );
+        try {
+            _detail::call(
+                service_name,
+                [callback_](
+                    const std::exception *const e, const std::string& json
+                ) {
+                    (*callback_)(e);
+                },
+                json
+            );
+        } catch (const std::exception& e) {
+            (*callback_)(&e);
+        }
     }
 }
