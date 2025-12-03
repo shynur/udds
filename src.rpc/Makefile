@@ -19,7 +19,7 @@ clean:
 	for f in ./* ./.*; do  \
 		f=`basename -- $$f`;  \
 		case "$$f" in  \
-			shynur-polyfill.hpp | nlohmann | Makefile | CMakeLists.txt | .gitignore | a.cpp | urpc.hpp | ShynurUrpcProcessor.idl | .vscode | compile_flags.txt) :;;  \
+			shynur-utils-logger.hpp | shynur-polyfill.hpp | nlohmann | Makefile | CMakeLists.txt | .gitignore | a.cpp | urpc.hpp | ShynurUrpcProcessor.idl | .vscode | compile_flags.txt) :;;  \
 			*) rm -rf "./$$f";;  \
 		esac;  \
 	done

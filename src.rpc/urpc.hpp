@@ -6,69 +6,7 @@
 #include <bits/stdc++.h>
 using namespace std::literals;
 #include "shynur-polyfill.hpp"
-
-namespace shynur::utils {
-    struct [[gnu::weak]] Logger {
-        static inline std::atomic_bool enabled = std::string{
-            std::getenv("URPC_LOG") ? std::getenv("URPC_LOG") : ""
-        }.length() >= 1;
-        const std::string_view                                   level;
-        const std::chrono::time_point<std::chrono::system_clock> now;
-
-        Logger(const std::string_view level)
-        : level{level}, now{std::chrono::system_clock::now()} {}
-
-        ~Logger() {
-            const auto time_s = [this] {
-                const auto t = std::chrono::system_clock::to_time_t(this->now);
-                auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(this->now.time_since_epoch()) % 1000;
-                const auto tm = std::localtime(&t);
-                return static_cast<const std::ostringstream&>(
-                    std::ostringstream{}
-                    << std::put_time(tm, "%Y-%m-%d_%H:%M:%S")
-                    << '.' << std::setw(3) << std::setfill('0') << ms.count()
-                ).str();
-            }();
-            const auto level_color = this->level == "DEBUG" ? "\033[34;1m"
-                                     : this->level == "INFO" ? "\033[32;1m"
-                                     : "\033[31;1m";
-
-            const auto msg = std::format(
-                "{} {}[{}] \033[37;1m{}\033[m{}\n",
-                time_s,
-                level_color,
-                this->level,
-                this->context,
-                this->oss.str()
-            );
-
-            if (std::decay_t<decltype(*this)>::enabled)
-                (this->level == "ERROR" ? std::cerr : std::clog) << msg;
-        }
-        #ifndef __cpp_concepts
-            template <typename T>
-        #endif
-        auto& operator<<(const
-        #ifdef __cpp_concepts
-            auto
-        #else
-            T
-        #endif
-            & v
-        ) {
-            if (this->context.empty())
-                this->context = static_cast<const std::ostringstream&>(
-                    std::ostringstream{} << v
-                ).str();
-            else
-                this->oss << ' ' << v;
-            return *this;
-        }
-      private:
-        std::string        context;
-        std::ostringstream oss;
-    };
-}
+#include "shynur-utils-logger.hpp"
 
 #include <fastdds/dds/rpc/exceptions.hpp>
 #include <fastdds/dds/domain/qos/ReplierQos.hpp>
@@ -83,6 +21,12 @@ namespace shynur::utils {
 #include "ShynurUrpcProcessorServerImpl.hpp"
 
 namespace shynur::udds_rpc {
+
+struct [[gnu::weak]] LoggerConfig_ {
+    static constexpr const char *env_switch = "URPC_LOG";
+};
+using Logger = ::shynur::utils::Logger<LoggerConfig_>;
+
 struct [[gnu::weak]] Application {
     virtual ~Application() = default;
     virtual void run()     = 0;
@@ -148,7 +92,7 @@ struct ServerApp: Application {
             throw std::runtime_error{"Server initialization failed"};
         return server;
     }()} {
-        ::shynur::utils::Logger{"DEBUG"}
+        Logger{"DEBUG"}
             << "Server Initialized"
             << this->participant_->guid().guidPrefix;
     }
@@ -169,7 +113,7 @@ struct ServerApp: Application {
         if (this->stopped_)
             return;
 
-        ::shynur::utils::Logger{"INFO"}
+        Logger{"INFO"}
             << "Server Running"
             << this->participant_->guid().guidPrefix;
         this->server_->run();
@@ -178,7 +122,7 @@ struct ServerApp: Application {
         this->stopped_ = true;
         this->server_->stop();
 
-        ::shynur::utils::Logger{"INFO"}
+        Logger{"INFO"}
             << "Server Stopped"
             << this->participant_->guid().guidPrefix;
     }
@@ -240,24 +184,24 @@ struct [[gnu::weak]] ClientApp: Application {
                     client, std::forward<decltype(args)>(args)...
                 );
                 if (future.wait_for(1s) != std::future_status::ready) {
-                    ::shynur::utils::Logger{"ERROR"}
+                    Logger{"ERROR"}
                         << "Client RPC"
                         << "Timed Out";
                     return TIMEOUT;
                 }
                 try {
                     result = future.get();
-                    ::shynur::utils::Logger{"INFO"}
+                    Logger{"INFO"}
                         << "Client RPC"
                         << "Success";
                     return SUCCESS;
                 } catch (const ::eprosima::fastdds::dds::rpc::RpcBrokenPipeException&) {
-                    ::shynur::utils::Logger{"ERROR"}
+                    Logger{"ERROR"}
                         << "Client RPC"
                         << "Server Disconnected";
                     return ERROR;
                 } catch (const ::eprosima::fastdds::dds::rpc::RpcException& e) {
-                    ::shynur::utils::Logger{"ERROR"}
+                    Logger{"ERROR"}
                         << "Client RPC"
                         << "Exception:" << e.what();
                     return ERROR;
@@ -291,12 +235,12 @@ struct [[gnu::weak]] ClientApp: Application {
             return client;
         }()
     } {
-        ::shynur::utils::Logger{"DEBUG"}
+        Logger{"DEBUG"}
             << "Client Initialized"
             << this->participant_->guid().guidPrefix;
     }
     ~ClientApp() override {
-        ::shynur::utils::Logger{"DEBUG"}
+        Logger{"DEBUG"}
             << "Client Destroying"
             << this->participant_->guid().guidPrefix;
         // As a precautionary measure, delete the server here because
@@ -313,7 +257,7 @@ struct [[gnu::weak]] ClientApp: Application {
     }
     void stop() override {
         this->stopped_ = true;
-        ::shynur::utils::Logger{"INFO"}
+        Logger{"INFO"}
             << "Client Stopped"
             << this->participant_->guid().guidPrefix;
     }
@@ -338,7 +282,7 @@ struct [[gnu::weak]] ClientApp: Application {
 
         if (!this->ping_server()) {
             if (!this->stopped_) {
-                 ::shynur::utils::Logger{"ERROR"}
+                 Logger{"ERROR"}
                     << "Client RPC"
                     << "Server not reachable.  Aborting this rpc...";
                 throw std::runtime_error{"Server not reachable"};
@@ -370,7 +314,7 @@ struct [[gnu::weak]] ClientApp: Application {
                 const auto op_status = this->call_rpc(
                     &::ShynurUrpcProcessor::ping_, ""s, ""s
                 );
-                ::shynur::utils::Logger{"DEBUG"} << "Client" << "Tried ping server";
+                Logger{"DEBUG"} << "Client" << "Tried ping server";
                 return op_status;
             }
         };
@@ -381,7 +325,7 @@ struct [[gnu::weak]] ClientApp: Application {
         auto reachable = false;
         for (auto i = 0u; i < this->config.connection_attempts; i++)
             if (!this->stopped_) {
-                ::shynur::utils::Logger{"DEBUG"}
+                Logger{"DEBUG"}
                    << "Client"
                    << "Trying to ping server"
                    << '(' << (i + 1) << "/" << this->config.connection_attempts << ')';
@@ -393,7 +337,7 @@ struct [[gnu::weak]] ClientApp: Application {
                     break;
 
                 if (i == this->config.connection_attempts - 1)
-                    ::shynur::utils::Logger{"ERROR"}
+                    Logger{"ERROR"}
                         << "Client"
                         << "All ping failed";
             }
@@ -451,6 +395,12 @@ auto Application::make_app(const Options& options) -> std::shared_ptr<Applicatio
 #include "nlohmann/json.hpp"
 
 namespace rbk::urpc {
+
+    struct [[gnu::weak]] LoggerConfig_ {
+        static constexpr const char *env_switch = "URPC_LOG";
+    };
+    using Logger = ::shynur::utils::Logger<LoggerConfig_>;
+
     namespace _detail {
         struct [[gnu::weak]] Server: ::shynur::udds_rpc::Application::ServerImpl {
             inline static std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
@@ -496,7 +446,7 @@ namespace rbk::urpc {
                         break;
                     }
                     case OperationStatus::SUCCESS: {
-                        ::shynur::utils::Logger{"INFO"}
+                        Logger{"INFO"}
                             << "Client RPC Result"
                             << result;
                         callback(nullptr, result);
@@ -557,11 +507,11 @@ namespace rbk::urpc {
                                   .get<std::tuple<std::decay_t<Args>...>>();
                 if constexpr (std::is_same_v<R, void>) {
                     std::apply(handler, args);
-                    ::shynur::utils::Logger{"INFO"} << "serve" << "==> void";
+                    Logger{"INFO"} << "serve" << "==> void";
                     return "";
                 } else {
                     const auto result = std::apply(handler, args);
-                    ::shynur::utils::Logger{"INFO"} << "serve" << "==>" << ::nlohmann::json(result).dump();
+                    Logger{"INFO"} << "serve" << "==>" << ::nlohmann::json(result).dump();
                     return ::nlohmann::json(result).dump();
                 }
             }
@@ -581,7 +531,7 @@ namespace rbk::urpc {
         };
 
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
+        Logger{"INFO"} << "call" << '(' << json << ')';
 
         try {
             _detail::call(
@@ -610,7 +560,7 @@ namespace rbk::urpc {
         };
 
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        ::shynur::utils::Logger{"INFO"} << "call" << '(' << json << ')';
+        Logger{"INFO"} << "call" << '(' << json << ')';
 
         try {
             _detail::call(
