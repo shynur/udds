@@ -36,8 +36,10 @@ struct [[gnu::weak]] Application {
         std::string service;  // 服务名
         std::string entity;  // server|client
         std::size_t thread_pool_size = [](const char *const var) {
-            const auto val = std::string{std::getenv(var) ? std::getenv(var) : "0"};
+            const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
             Logger{"INFO"} << "export" << var + "="s + val;
+            if (val.empty())
+                return val = "0";
             return std::stoull(val);
         }("URPC_SERVER_DEFAULT_NUM_THREADS");
     };
@@ -499,7 +501,7 @@ namespace rbk::urpc {
 
             if (disabled_services.find(service_name) != disabled_services.cend()) {
                 Logger{"DEBUG"}
-                    << "serve"s + service_name
+                    << "serve "s + service_name
                     << "is disabled via RBK_URPC_DISABLED_SERVICES";
                 return std::shared_ptr<AppRunner>{};
             }
