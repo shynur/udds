@@ -22,10 +22,10 @@ using namespace std::literals;
 
 namespace shynur::udds_rpc {
 
-struct [[gnu::weak]] LoggerConfig_ {
-    static constexpr const char *env_switch = "URPC_LOG";
+struct [[gnu::weak]] Logger: ::shynur::utils::Logger<Logger> {
+    using ::shynur::utils::Logger<Logger>::Logger;
+    inline static const char *const env_switch = "URPC_LOG";
 };
-using Logger = ::shynur::utils::Logger<LoggerConfig_>;
 
 struct [[gnu::weak]] Application {
     virtual ~Application() = default;
@@ -402,8 +402,9 @@ namespace rbk {
 
 namespace rbk::urpc {
 
-    struct [[gnu::weak]] LoggerConfig_ {
-        static constexpr const char *env_switch = "URPC_LOG";
+    struct [[gnu::weak]] Logger: LittleLogger<Logger> {
+        using LittleLogger<Logger>::Logger;
+        inline static const char *const env_switch = "URPC_LOG";
     };
 
     namespace _detail {
@@ -451,7 +452,7 @@ namespace rbk::urpc {
                         break;
                     }
                     case OperationStatus::SUCCESS: {
-                        LittleLogger<LoggerConfig_>{"INFO"}
+                        Logger{"INFO"}
                             << "Client RPC Result"
                             << result;
                         callback(nullptr, result);
@@ -512,11 +513,11 @@ namespace rbk::urpc {
                                   .get<std::tuple<std::decay_t<Args>...>>();
                 if constexpr (std::is_same_v<R, void>) {
                     std::apply(handler, args);
-                    LittleLogger<LoggerConfig_>{"INFO"} << "serve" << "==> void";
+                    Logger{"INFO"} << "serve" << "==> void";
                     return "";
                 } else {
                     const auto result = std::apply(handler, args);
-                    LittleLogger<LoggerConfig_>{"INFO"} << "serve" << "==>" << ::nlohmann::json(result).dump();
+                    Logger{"INFO"} << "serve" << "==>" << ::nlohmann::json(result).dump();
                     return ::nlohmann::json(result).dump();
                 }
             }
@@ -536,7 +537,7 @@ namespace rbk::urpc {
         };
 
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        LittleLogger<LoggerConfig_>{"INFO"} << "call" << '(' << json << ')';
+        Logger{"INFO"} << "call" << '(' << json << ')';
 
         try {
             _detail::call(
@@ -565,7 +566,7 @@ namespace rbk::urpc {
         };
 
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        LittleLogger<LoggerConfig_>{"INFO"} << "call" << '(' << json << ')';
+        Logger{"INFO"} << "call" << '(' << json << ')';
 
         try {
             _detail::call(
