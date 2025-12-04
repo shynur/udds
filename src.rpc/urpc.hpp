@@ -33,9 +33,13 @@ struct [[gnu::weak]] Application {
     virtual void stop()    = 0;
 
     struct Options {
-        std::string   service;  // 服务名
-        std::string   entity;  // server|client
-        std::size_t   thread_pool_size = 2;  // (可选) server 线程池数量
+        std::string service;  // 服务名
+        std::string entity;  // server|client
+        std::size_t thread_pool_size = [](const char *const var) {
+            const auto val = std::string{std::getenv(var) ? std::getenv(var) : "0"};
+            Logger{"INFO"} << "export" << var + "="s + val;
+            return std::stoull(val);
+        }("URPC_SERVER_DEFAULT_NUM_THREADS");
     };
 
     struct ServerImpl: ::ShynurUrpcProcessorServerImplementation,
@@ -465,12 +469,6 @@ namespace rbk::urpc {
         inline auto serve(
             const std::string& service_name, std::function<std::string(std::string)> handler
         ) {
-            Server::methods[service_name] = std::move(handler);
-
-            auto app = ::shynur::udds_rpc::Application::make_app<Server>({
-                .service = service_name,
-                .entity  = "server",
-            });
             struct AppRunner {
                 const std::shared_ptr<::shynur::udds_rpc::Application> app;
                 std::thread                                    thread;
@@ -485,6 +483,32 @@ namespace rbk::urpc {
                         this->thread.join();
                 }
             };
+
+            static const auto disabled_services = [](const char *const var) {
+                const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
+                Logger{"INFO"} << "export" << var + "="s + val;
+
+                auto services = std::unordered_set<std::string>{};
+
+                std::istringstream in{val};
+                for (std::string service; std::getline(in, service, ','); )
+                    if (!service.empty())
+                        services.insert(service);
+                return services;
+            }("RBK_URPC_DISABLED_SERVICES");
+
+            if (disabled_services.find(service_name) != disabled_services.cend()) {
+                Logger{"DEBUG"}
+                    << "serve"s + service_name
+                    << "is disabled via RBK_URPC_DISABLED_SERVICES";
+                return std::shared_ptr<AppRunner>{};
+            }
+
+            Server::methods[service_name] = std::move(handler);
+            auto app = ::shynur::udds_rpc::Application::make_app<Server>({
+                .service = service_name,
+                .entity  = "server",
+            });
             return std::make_shared<AppRunner>(app);
         }
 
