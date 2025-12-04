@@ -8,7 +8,7 @@ namespace shynur::utils {
     struct [[gnu::weak]] Logger {
         static inline std::atomic_bool enabled = [](const char *const var) -> bool {
             const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
-            std::cerr << std::format(
+            std::clog << std::format(
                 "export {}={}\n", var, val
             );
             return val.length();
