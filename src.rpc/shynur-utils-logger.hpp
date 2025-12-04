@@ -6,9 +6,13 @@ using namespace std::literals;
 namespace shynur::utils {
     template <class Config>
     struct [[gnu::weak]] Logger {
-        static inline std::atomic_bool enabled = std::string{
-            std::getenv(Config::env_switch) ? std::getenv(Config::env_switch) : ""
-        }.length() >= 1;
+        static inline std::atomic_bool enabled = [](const char *const var) -> bool {
+            const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
+            std::cerr << std::format(
+                "export {}={}\n", var, val
+            );
+            return val.length();
+        }(Config::env_switch);
         const std::string_view                                   level;
         const std::chrono::time_point<std::chrono::system_clock> now;
 

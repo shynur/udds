@@ -93,7 +93,7 @@ struct ServerApp: Application {
         return server;
     }()} {
         Logger{"DEBUG"}
-            << "Server Initialized"
+            << "Server (" + std::string{service_name} + ") Initialized"
             << this->participant_->guid().guidPrefix;
     }
     ~ServerApp() override {
