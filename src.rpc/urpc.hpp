@@ -35,13 +35,15 @@ struct [[gnu::weak]] Application {
     struct Options {
         std::string service;  // 服务名
         std::string entity;  // server|client
-        std::size_t thread_pool_size = [](const char *const var) {
-            const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
-            Logger{"INFO"} << "export" << var + "="s + val;
-            if (val.empty())
-                return val = "0";
+        std::size_t thread_pool_size = [] {
+            static const auto val = [] {
+                const auto var = "URPC_SERVER_DEFAULT_NUM_THREADS"s;
+                const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                Logger{"INFO"} << "export" << var + "=" + val;
+                return val.empty() ? "0"s : val;
+            }();
             return std::stoull(val);
-        }("URPC_SERVER_DEFAULT_NUM_THREADS");
+        }();
     };
 
     struct ServerImpl: ::ShynurUrpcProcessorServerImplementation,
@@ -139,9 +141,78 @@ struct ServerApp: Application {
         if (!factory)
             throw std::runtime_error{"shynur.urpc Failed to get participant factory instance"};
 
-        const auto participant = factory->create_participant_with_default_profile();
+        const auto participant = factory->create_participant(
+            []() -> ::eprosima::fastdds::dds::DomainId_t {
+                static const auto val = [] {
+                    const auto var = "URPC_DEFAULT_DOMAIN_ID"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val.empty() ? "0"s : val;
+                }();
+                return std::stoull(val);
+            }(),
+            [] {
+                auto qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
+
+                static const auto URPC_DEFAULT_LEASE_DURATION = [] {
+                    const auto var = "URPC_DEFAULT_LEASE_DURATION"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_LEASE_DURATION.empty()) {
+                    static const auto default_val = std::stod(URPC_DEFAULT_LEASE_DURATION);
+                    qos.wire_protocol().builtin.discovery_config.leaseDuration = {
+                        std::int32_t(default_val),
+                        std::uint32_t((default_val - std::floor(default_val)) * 1'000'000'000)
+                    };
+                }
+
+                static const auto URPC_DEFAULT_ANNOUNCEMENT_PERIOD = [] {
+                    const auto var = "URPC_DEFAULT_ANNOUNCEMENT_PERIOD"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_ANNOUNCEMENT_PERIOD.empty()) {
+                    static const auto default_val = std::stod(URPC_DEFAULT_ANNOUNCEMENT_PERIOD);
+                    qos.wire_protocol().builtin.discovery_config.leaseDuration_announcementperiod = {
+                        std::int32_t(default_val),
+                        std::uint32_t((default_val - std::floor(default_val)) * 1'000'000'000)
+                    };
+                }
+
+                static const auto URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT = [] {
+                    const auto var = "URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT.empty()) {
+                    static const auto default_val = std::stoull(URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT);
+                    qos.wire_protocol().builtin.discovery_config.initial_announcements.count = default_val;
+                }
+
+                static const auto URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD = [] {
+                    const auto var = "URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD.empty()) {
+                    static const auto default_val = std::stod(URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD);
+                    qos.wire_protocol().builtin.discovery_config.initial_announcements.period = {
+                        std::int32_t(default_val),
+                        std::uint32_t((default_val - std::floor(default_val)) * 1'000'000'000)
+                    };
+                }
+
+                return qos;
+            }()
+        );
         if (!participant)
             throw std::runtime_error{"shynur.urpc Participant initialization failed"};
+
         return participant;
     }();
     std::shared_ptr<ServerImpl> server_impl_{(ServerImpl *)new UserDefinedServerImpl};
@@ -356,15 +427,80 @@ struct [[gnu::weak]] ClientApp: Application {
     ::eprosima::fastdds::dds::DomainParticipant *participant_ = [] {
         const auto factory = ::eprosima::fastdds::dds::DomainParticipantFactory::get_shared_instance();
         if (!factory)
-            throw std::runtime_error{
-                "shynur.urpc Failed to get participant factory instance"
-            };
+            throw std::runtime_error{"shynur.urpc Failed to get participant factory instance"};
 
-        const auto participant = factory->create_participant_with_default_profile();
+        const auto participant = factory->create_participant(
+            []() -> ::eprosima::fastdds::dds::DomainId_t {
+                static const auto val = [] {
+                    const auto var = "URPC_DEFAULT_DOMAIN_ID"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val.empty() ? "0"s : val;
+                }();
+                return std::stoull(val);
+            }(),
+            [] {
+                auto qos = ::eprosima::fastdds::dds::DomainParticipantQos{};
+
+                static const auto URPC_DEFAULT_LEASE_DURATION = [] {
+                    const auto var = "URPC_DEFAULT_LEASE_DURATION"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_LEASE_DURATION.empty()) {
+                    static const auto default_val = std::stod(URPC_DEFAULT_LEASE_DURATION);
+                    qos.wire_protocol().builtin.discovery_config.leaseDuration = {
+                        std::int32_t(default_val),
+                        std::uint32_t((default_val - std::floor(default_val)) * 1'000'000'000)
+                    };
+                }
+
+                static const auto URPC_DEFAULT_ANNOUNCEMENT_PERIOD = [] {
+                    const auto var = "URPC_DEFAULT_ANNOUNCEMENT_PERIOD"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_ANNOUNCEMENT_PERIOD.empty()) {
+                    static const auto default_val = std::stod(URPC_DEFAULT_ANNOUNCEMENT_PERIOD);
+                    qos.wire_protocol().builtin.discovery_config.leaseDuration_announcementperiod = {
+                        std::int32_t(default_val),
+                        std::uint32_t((default_val - std::floor(default_val)) * 1'000'000'000)
+                    };
+                }
+
+                static const auto URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT = [] {
+                    const auto var = "URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT.empty()) {
+                    static const auto default_val = std::stoull(URPC_DEFAULT_INITIAL_ANNOUNCEMENT_COUNT);
+                    qos.wire_protocol().builtin.discovery_config.initial_announcements.count = default_val;
+                }
+
+                static const auto URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD = [] {
+                    const auto var = "URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD"s;
+                    const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                    Logger{"INFO"} << "export" << var + "="s + val;
+                    return val;
+                }();
+                if (!URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD.empty()) {
+                    static const auto default_val = std::stod(URPC_DEFAULT_INITIAL_ANNOUNCEMENT_PERIOD);
+                    qos.wire_protocol().builtin.discovery_config.initial_announcements.period = {
+                        std::int32_t(default_val),
+                        std::uint32_t((default_val - std::floor(default_val)) * 1'000'000'000)
+                    };
+                }
+
+                return qos;
+            }()
+        );
         if (!participant)
-            throw std::runtime_error{
-                "shynur.urpc Participant initialization failed"
-            };
+            throw std::runtime_error{"shynur.urpc Participant initialization failed"};
+
         return participant;
     }();
     std::shared_ptr<ShynurUrpcProcessor> client_;

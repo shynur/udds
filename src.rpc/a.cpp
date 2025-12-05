@@ -14,10 +14,17 @@ int main(const int argc, const char *const argv[]) {
         rbk::urpc::call(
             "Service1",
             std::function{[](const std::exception *err, std::string result) noexcept {
-                if (err != nullptr)
-                    std::cout << "===== Error =====> " << err->what() << std::endl;
+                if (err)
+                    std::println(
+                        std::cerr,
+                        "===== Error =====> {}",
+                        err->what()
+                    );
                 else
-                    std::cout << "===== Result =====> " << result << std::endl;
+                    std::println(
+                        "===== Result =====> {}",
+                        result
+                    );
             }},
             2, "ppppppp"
         );

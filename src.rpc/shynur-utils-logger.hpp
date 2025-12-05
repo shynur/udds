@@ -8,8 +8,10 @@ namespace shynur::utils {
     struct [[gnu::weak]] Logger {
         static inline std::atomic_bool enabled = [](const char *const var) -> bool {
             const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
-            std::clog << std::format(
-                "export {}={}\n", var, val
+            std::println(
+                std::clog,
+                "export {}={}",
+                var, val
             );
             return val.length();
         }(Config::env_switch);
@@ -37,16 +39,15 @@ namespace shynur::utils {
                                      : this->level == "INFO" ? "\033[32;1m"
                                      : "\033[31;1m";
 
-            const auto msg = std::format(
-                "{} {}[{}] \033[37;1m{}\033[m{}\n",
+            std::println(
+                this->level == "ERROR" ? std::cerr : std::clog,
+                "{} {}[{}] \033[37;1m{}\033[m{}",
                 time_s,
                 level_color,
                 this->level,
                 this->context,
                 this->oss.str()
             );
-
-            (this->level == "ERROR" ? std::cerr : std::clog) << msg;
         }
         #ifndef __cpp_concepts
             template <typename T>
