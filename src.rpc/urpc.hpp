@@ -24,7 +24,7 @@ namespace shynur::udds_rpc {
 
 struct [[gnu::weak]] Logger: ::shynur::utils::Logger<Logger> {
     using ::shynur::utils::Logger<Logger>::Logger;
-    inline static const char *const env_switch = "URPC_LOG";
+    static constexpr const char *env_switch = "URPC_LOG";
 };
 
 struct [[gnu::weak]] Application {
@@ -546,7 +546,7 @@ namespace rbk::urpc {
 
     struct [[gnu::weak]] Logger: LittleLogger<Logger> {
         using LittleLogger<Logger>::Logger;
-        inline static const char *const env_switch = "URPC_LOG";
+        static constexpr const char *env_switch = "URPC_LOG";
     };
 
     namespace _detail {
