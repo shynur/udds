@@ -1,6 +1,7 @@
 #include "urpc.hpp"
 
 int main(const int argc, const char *const argv[]) {
+    unsigned method_num_to_call;
     auto options = ::shynur::udds_rpc::Application::Options{};
     for (auto i = 1; i != argc; i++)
         if (const auto arg = std::string{argv[i]}; arg == "-s")
@@ -9,10 +10,12 @@ int main(const int argc, const char *const argv[]) {
             options.entity = "client";
         else if (arg.rfind("--thread_pool_size=", 0) == 0)
             options.thread_pool_size = std::stoul(arg.substr(19));
+        else if (arg.rfind("--m=", 0) == 0)
+            method_num_to_call = std::stoul(arg.substr(4));
 
     if (options.entity == "client")
         rbk::urpc::call(
-            "服务器S", "方法666",
+            "服务器S", std::format("方法{}", method_num_to_call),
             std::function{[](const std::exception *err, std::string result) noexcept {
                 if (err)
                     std::println(
