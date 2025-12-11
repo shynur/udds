@@ -29,7 +29,7 @@ int main(const int argc, const char *const argv[]) {
                         result
                     );
             }},
-            2, "ppppppp"
+            2, "abc"
         );
     else {
         const auto handler = std::function{[](int i, std::string s) noexcept {

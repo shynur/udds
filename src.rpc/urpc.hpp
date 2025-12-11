@@ -612,7 +612,15 @@ namespace rbk::urpc {
                     case OperationStatus::SUCCESS: {
                         Logger{"INFO"}
                             << "Client RPC Result"
-                            << result;
+                            << (
+                                result.length() <= 40
+                                ? result
+                                : std::format(
+                                    "{} /*...*/ {}",
+                                    result.substr(0, 15),
+                                    result.substr(result.size() - 15)
+                                )
+                            );
                         callback(nullptr, result);
                     }
                 }
@@ -716,8 +724,17 @@ namespace rbk::urpc {
                     return "";
                 } else {
                     const auto result = std::apply(handler, args);
-                    Logger{"INFO"} << "serve" << "==>" << ::nlohmann::json(result).dump();
-                    return ::nlohmann::json(result).dump();
+                    const auto result_json = ::nlohmann::json(result).dump();
+                    Logger{"INFO"} << "serve" << "==>" << (
+                        result_json.length() <= 40
+                        ? result_json
+                        : std::format(
+                            "{} /*...*/ {}",
+                            result_json.substr(0, 15),
+                            result_json.substr(result_json.size() - 15)
+                        )
+                    );
+                    return result_json;
                 }
             }
         );
@@ -736,7 +753,15 @@ namespace rbk::urpc {
         };
 
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        Logger{"INFO"} << "call" << '(' << json << ')';
+        Logger{"INFO"} << "call" << (
+            json.length() <= 40
+            ? json
+            : std::format(
+                "{} /*...*/ {}",
+                json.substr(0, 15),
+                json.substr(json.size() - 15)
+            )
+        );
 
         try {
             _detail::call(
@@ -765,7 +790,15 @@ namespace rbk::urpc {
         };
 
         const auto json = sizeof...(args) == 0 ? "[]" : ::nlohmann::json{args...}.dump();
-        Logger{"INFO"} << "call" << '(' << json << ')';
+        Logger{"INFO"} << "call" << (
+            json.length() <= 40
+            ? json
+            : std::format(
+                "{} /*...*/ {}",
+                json.substr(0, 15),
+                json.substr(json.size() - 15)
+            )
+        );
 
         try {
             _detail::call(
