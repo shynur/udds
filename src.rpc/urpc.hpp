@@ -565,11 +565,15 @@ namespace rbk::urpc {
     namespace _detail {
         struct [[gnu::weak]] Server: ::shynur::udds_rpc::Application::ServerImpl {
             std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
+            std::shared_mutex methods_mutex{};
 
             auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
                 const std::string& m, const std::string& x
             ) -> std::string override {
-                return this->methods.at(m)(x);
+                return [this, m]() -> auto& {
+                    const auto lock [[maybe_unused]] = std::shared_lock{this->methods_mutex};
+                    return this->methods.at(m);
+                }()(x);
             }
         };
         struct [[gnu::weak]] Client: ::shynur::udds_rpc::ClientApp::Operation {
@@ -658,7 +662,10 @@ namespace rbk::urpc {
             >{};
             if (server_impls.find(server) == server_impls.cend())
                 server_impls[server] = std::make_shared<Server>();
-            server_impls.at(server)->methods[method] = std::move(handler);
+            [&](const auto& server_impl) {
+                const auto lock [[maybe_unused]] = std::unique_lock{server_impl->methods_mutex};
+                server_impl->methods[method] = std::move(handler);
+            }(server_impls.at(server));
 
             static auto server_apps = std::unordered_map<
                 std::string,
