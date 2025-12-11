@@ -12,7 +12,7 @@ int main(const int argc, const char *const argv[]) {
 
     if (options.entity == "client")
         rbk::urpc::call(
-            "Service1",
+            "服务器S", "方法666",
             std::function{[](const std::exception *err, std::string result) noexcept {
                 if (err)
                     std::println(
@@ -29,12 +29,15 @@ int main(const int argc, const char *const argv[]) {
             2, "ppppppp"
         );
     else {
-        auto ptr = rbk::urpc::serve(
-            "Service1",
-            std::function{[](int i, std::string s) noexcept {
-                return std::to_string(i) + ": " + s;
-            }}
-        );
+        const auto handler = std::function{[](int i, std::string s) noexcept {
+            return std::to_string(i) + ": " + s;
+        }};
+        auto p1 = rbk::urpc::serve("服务器S", "方法1", handler);
+        auto p2 = rbk::urpc::serve("服务器S", "方法2", handler);
+        for (auto i = 3u; i < 1000; ++i)
+            rbk::urpc::serve("服务器S", std::format("方法{}", i), handler);
+        rbk::urpc::Logger{"INFO"} << "__main__" << "全部注册完成";
+        assert(p1 == p2);
         std::this_thread::sleep_for(1min);
     }
 }

@@ -31,21 +31,6 @@ struct [[gnu::weak]] Application {
     virtual ~Application() = default;
     virtual void run()     = 0;
     virtual void stop()    = 0;
-
-    struct Options {
-        std::string service;  // 服务名
-        std::string entity;  // server|client
-        std::size_t thread_pool_size = [] {
-            static const auto val = [] {
-                const auto var = "URPC_SERVER_DEFAULT_NUM_THREADS"s;
-                const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
-                Logger{"INFO"} << "export" << var + "=" + val;
-                return val.empty() ? "0"s : val;
-            }();
-            return std::stoull(val);
-        }();
-    };
-
     struct ServerImpl: ::ShynurUrpcProcessorServerImplementation,
                        std::enable_shared_from_this<ServerImpl> {
         auto ptr() -> std::shared_ptr<ServerImpl>{
@@ -58,6 +43,21 @@ struct [[gnu::weak]] Application {
         ) -> std::string override {
             return "";
         }
+    };
+
+    struct Options {
+        std::string server;  // 服务器名
+        std::string entity;  // server|client
+        std::size_t thread_pool_size = [] {
+            static const auto val = [] {
+                const auto var = "URPC_SERVER_DEFAULT_NUM_THREADS"s;
+                const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                Logger{"INFO"} << "export" << var + "=" + val;
+                return val.empty() ? "0"s : val;
+            }();
+            return std::stoull(val);
+        }();
+        std::shared_ptr<ServerImpl> server_impl = nullptr;
     };
     template <
     #ifdef __cpp_lib_concepts
@@ -76,16 +76,19 @@ template <
     #else
         typename
     #endif
-    UserDefinedServerImpl
+        UserDefinedServerImpl
 >
 struct ServerApp: Application {
     const struct Config {
         const std::size_t thread_pool_size = 0;
+        std::weak_ptr<UserDefinedServerImpl> server_impl;
     } config;
 
     ServerApp(
         const std::string_view service_name, const Config& config
-    ): config{config}, server_{[&, this] {
+    ): config{config},
+       server_impl_{this->config.server_impl},
+       server_{[&, this] {
         const auto server = ::create_ShynurUrpcProcessorServer(
             *this->participant_,
             std::string{service_name}.c_str(),
@@ -93,7 +96,14 @@ struct ServerApp: Application {
                 auto qos = ::eprosima::fastdds::dds::ReplierQos{};
                 return qos;
             }(),
-            this->config.thread_pool_size,
+            [this] {
+                Logger{"DEBUG"} << "Initializing Server"
+                                << std::format(
+                                    "thread_pool_size={}",
+                                    this->config.thread_pool_size
+                                );
+                return this->config.thread_pool_size;
+            }(),
             this->server_impl_
         );
         if (!server)
@@ -215,7 +225,7 @@ struct ServerApp: Application {
 
         return participant;
     }();
-    std::shared_ptr<ServerImpl> server_impl_{(ServerImpl *)new UserDefinedServerImpl};
+    std::shared_ptr<ServerImpl> server_impl_;
     std::shared_ptr<::ShynurUrpcProcessorServer> server_;
 };
 
@@ -516,13 +526,16 @@ template <
     UserDefinedServerImpl
 >
 auto Application::make_app(const Options& options) -> std::shared_ptr<Application> {
-    const auto service_name = options.service + "_Service"s;
+    const auto service_name = options.server + "_Service"s;
     Application *app;
     if (options.entity == "server"s)
         app = new ServerApp<UserDefinedServerImpl>{
             service_name,
             {
                 .thread_pool_size = options.thread_pool_size,
+                .server_impl = options.server_impl
+                               ? std::dynamic_pointer_cast<UserDefinedServerImpl>(options.server_impl)
+                               : std::shared_ptr<UserDefinedServerImpl>{new UserDefinedServerImpl},
             }
         };
     else
@@ -551,7 +564,7 @@ namespace rbk::urpc {
 
     namespace _detail {
         struct [[gnu::weak]] Server: ::shynur::udds_rpc::Application::ServerImpl {
-            inline static std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
+            std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
 
             auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
                 const std::string& m, const std::string& x
@@ -560,8 +573,7 @@ namespace rbk::urpc {
             }
         };
         struct [[gnu::weak]] Client: ::shynur::udds_rpc::ClientApp::Operation {
-            const std::string m;
-            const std::string x;
+            const std::string m, x;
             const std::function<void(const std::exception *, std::string)> callback;
             Client(
                 const std::string& m,
@@ -605,7 +617,8 @@ namespace rbk::urpc {
         };
 
         inline auto serve(
-            const std::string& service_name, std::function<std::string(std::string)> handler
+            const std::string& server, const std::string& method,
+            std::function<std::string(std::string)> handler
         ) {
             struct AppRunner {
                 const std::shared_ptr<::shynur::udds_rpc::Application> app;
@@ -622,54 +635,71 @@ namespace rbk::urpc {
                 }
             };
 
-            static const auto disabled_services = [](const char *const var) {
-                const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
-                Logger{"INFO"} << "export" << var + "="s + val;
+            // static const auto disabled_services = [](const char *const var) {
+            //     const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
+            //     Logger{"INFO"} << "export" << var + "="s + val;
+            //     auto services = std::unordered_set<std::string>{};
+            //     std::istringstream in{val};
+            //     for (std::string service; std::getline(in, service, ','); )
+            //         if (!service.empty())
+            //             services.insert(service);
+            //     return services;
+            // }("RBK_URPC_DISABLED_SERVICES");
+            // if (disabled_services.find(service_name) != disabled_services.cend()) {
+            //     Logger{"DEBUG"}
+            //         << "serve "s + service_name
+            //         << "is disabled via RBK_URPC_DISABLED_SERVICES";
+            //     return std::shared_ptr<AppRunner>{};
+            // }
 
-                auto services = std::unordered_set<std::string>{};
+            static auto server_impls = std::unordered_map<
+                std::string,
+                std::shared_ptr<Server>
+            >{};
+            if (server_impls.find(server) == server_impls.cend())
+                server_impls[server] = std::make_shared<Server>();
+            server_impls.at(server)->methods[method] = std::move(handler);
 
-                std::istringstream in{val};
-                for (std::string service; std::getline(in, service, ','); )
-                    if (!service.empty())
-                        services.insert(service);
-                return services;
-            }("RBK_URPC_DISABLED_SERVICES");
-
-            if (disabled_services.find(service_name) != disabled_services.cend()) {
-                Logger{"DEBUG"}
-                    << "serve "s + service_name
-                    << "is disabled via RBK_URPC_DISABLED_SERVICES";
-                return std::shared_ptr<AppRunner>{};
-            }
-
-            Server::methods[service_name] = std::move(handler);
-            auto app = ::shynur::udds_rpc::Application::make_app<Server>({
-                .service = service_name,
-                .entity  = "server",
-            });
-            return std::make_shared<AppRunner>(app);
+            static auto server_apps = std::unordered_map<
+                std::string,
+                std::weak_ptr<AppRunner>
+            >{};
+            if (server_apps.find(server) == server_apps.cend() or server_apps.at(server).expired()) {
+                const auto app = std::make_shared<AppRunner>(
+                    shynur::udds_rpc::Application::make_app<Server>({
+                        .server = server,
+                        .entity  = "server",
+                        .server_impl = server_impls.at(server),
+                    })
+                );
+                server_apps[server] = app;
+                return app;
+            } else
+                return server_apps.at(server).lock();
         }
 
         inline auto call(
-            const std::string& service_name,
+            const std::string& server, const std::string& method,
             std::function<void(const std::exception *, std::string)> callback,
             const std::string& json
         ) {
             auto app = ::shynur::udds_rpc::Application::make_app<Server>({
-                .service = service_name,
+                .server = server,
                 .entity  = "client",
             });
 
-            std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(Client{service_name, json, callback});
+            std::dynamic_pointer_cast<::shynur::udds_rpc::ClientApp>(app)->call(
+                Client{method, json, callback}
+            );
         }
     } // namespace _detail
 
     template <typename R, typename... Args>
     auto serve(
-        const std::string& service_name, std::function<R(Args...)> handler
+        const std::string& server, const std::string& method, std::function<R(Args...)> handler
     ) {
         return _detail::serve(
-            service_name,
+            server, method,
             [handler=std::move(handler)](const std::string& json) -> std::string {
                 const auto args = ::nlohmann::json::parse(json)
                                   .get<std::tuple<std::decay_t<Args>...>>();
@@ -688,7 +718,7 @@ namespace rbk::urpc {
 
     template </*del*/typename R, typename... Args>
     void call(
-        const std::string& service_name,
+        const std::string& server, const std::string& method,
         std::function<void(const std::exception *, /*del*/R)> callback,
         Args... args
     ) {
@@ -703,7 +733,7 @@ namespace rbk::urpc {
 
         try {
             _detail::call(
-                service_name,
+                server, method,
                 [callback_](
                     const std::exception *const e, const std::string& json
                 ) {
@@ -717,7 +747,7 @@ namespace rbk::urpc {
     }
     template <typename... Args>
     void call(
-        const std::string& service_name,
+        const std::string& server, const std::string& method,
         std::function<void(const std::exception *)> callback,
         Args... args
     ) {
@@ -732,7 +762,7 @@ namespace rbk::urpc {
 
         try {
             _detail::call(
-                service_name,
+                server, method,
                 [callback_](
                     const std::exception *const e, const std::string& json
                 ) {
