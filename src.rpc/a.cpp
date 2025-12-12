@@ -16,7 +16,7 @@ int main(const int argc, const char *const argv[]) {
     if (options.entity == "client")
         rbk::urpc::call(
             "服务器S", std::format("方法{}", method_num_to_call),
-            std::function{[](const std::exception *err, std::string result) noexcept {
+            std::function{[](const std::exception *err) noexcept {
                 if (err)
                     std::println(
                         std::cerr,
@@ -25,15 +25,13 @@ int main(const int argc, const char *const argv[]) {
                     );
                 else
                     std::println(
-                        "===== Result =====> {}",
-                        result
+                        "===== Result =====>"
                     );
-            }},
-            2, "abc"
+            }}, 1
         );
     else {
-        const auto handler = std::function{[](int i, std::string s) noexcept {
-            return std::to_string(i) + ": " + s;
+        const auto handler = std::function{[](int i) noexcept {
+            return;
         }};
         auto p1 = rbk::urpc::serve("服务器S", "方法1", handler);
         auto p2 = rbk::urpc::serve("服务器S", "方法2", handler);

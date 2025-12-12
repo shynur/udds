@@ -727,12 +727,7 @@ namespace rbk::urpc {
                         auto servers = std::unordered_map<std::string, std::uintptr_t>{};
                         for (const auto& [name, ptr] : server_apps)
                             servers[name] = std::uintptr_t(
-                                #ifdef __cpp_lib_to_address
-                                    std::to_address
-                                #else
-                                    [](const auto& p) {return p.get();}
-                                #endif
-                                (ptr.lock())
+                                std::to_address(ptr.lock())
                             );
                         return ::nlohmann::json(servers).dump();
                     }();
