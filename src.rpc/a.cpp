@@ -14,25 +14,45 @@ int main(const int argc, const char *const argv[]) {
             method_num_to_call = arg[4];
 
     if (options.entity == "client")
-        rbk::urpc::call(
-            "服务器S", "方法"s+method_num_to_call,
-            std::function{[](const std::exception *err) noexcept {
-                if (err)
-                    std::println(
-                        std::cerr,
-                        "===== Error =====> {}",
-                        err->what()
-                    );
-                else
-                    std::println(
-                        "===== Result =====>"
-                    );
-            }}, 1
-        );
+        switch (method_num_to_call) {
+        case 'i':
+            rbk::urpc::call("服务器S", "方法"s+method_num_to_call,
+                std::function{[](const std::exception *err, int i) noexcept {
+                    if (err)
+                        std::println(std::cerr, "===== Error =====> {}", err->what());
+                    else
+                        std::println("===== Result =====> {}", i);
+                }},
+                int(method_num_to_call)
+            );
+            break;
+        case 'd':
+            rbk::urpc::call("服务器S", "方法"s+method_num_to_call,
+                std::function{[](const std::exception *err, double d) noexcept {
+                    if (err)
+                        std::println(std::cerr, "===== Error =====> {}", err->what());
+                    else
+                        std::println("===== Result =====> {}", d);
+                }},
+                double(method_num_to_call)
+            );
+            break;
+        case 'v':
+            rbk::urpc::call("服务器S", "方法"s+method_num_to_call,
+                std::function{[](const std::exception *err) noexcept {
+                    if (err)
+                        std::println(std::cerr, "===== Error =====> {}", err->what());
+                    else
+                        std::println("===== Result =====> void");
+                }}
+            );
+            break;
+        }
     else {
         auto p1 = rbk::urpc::serve("服务器S", "方法i", std::function{[](int i) {return i*2;}});
         auto p2 = rbk::urpc::serve("服务器S", "方法d", std::function{[](double d) {return d*2;}});
-        assert(p1 == p2);
+        auto p3 = rbk::urpc::serve("服务器S", "方法v", std::function{[]{}});
+        assert(p1 == p2 && p2 == p3);
         std::this_thread::sleep_for(1min);
     }
 }
