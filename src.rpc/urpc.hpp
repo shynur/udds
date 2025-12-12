@@ -22,12 +22,18 @@ using namespace std::literals;
 
 namespace shynur::udds_rpc {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 struct [[gnu::weak]] Logger: ::shynur::utils::Logger<Logger> {
+#pragma GCC diagnostic pop
     using ::shynur::utils::Logger<Logger>::Logger;
     static constexpr const char *env_switch = "URPC_LOG";
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 struct [[gnu::weak]] Application {
+#pragma GCC diagnostic pop
     virtual ~Application() = default;
     virtual void run()     = 0;
     virtual void stop()    = 0;
@@ -229,7 +235,10 @@ struct ServerApp: Application {
     std::shared_ptr<::ShynurUrpcProcessorServer> server_;
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 struct [[gnu::weak]] ClientApp: Application {
+#pragma GCC diagnostic pop
     struct Operation {
         enum class OperationStatus {SUCCESS, TIMEOUT, ERROR};
         #ifdef __cpp_using_enum
@@ -557,13 +566,19 @@ namespace rbk {
 
 namespace rbk::urpc {
 
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wattributes"
     struct [[gnu::weak]] Logger: LittleLogger<Logger> {
+    #pragma GCC diagnostic pop
         using LittleLogger<Logger>::Logger;
         static constexpr const char *env_switch = "URPC_LOG";
     };
 
     namespace _detail {
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wattributes"
         struct [[gnu::weak]] Server: ::shynur::udds_rpc::Application::ServerImpl {
+        #pragma GCC diagnostic pop
             std::unordered_map<std::string, std::function<std::string(std::string)>> methods{};
             std::shared_mutex methods_mutex{};
 
@@ -576,7 +591,10 @@ namespace rbk::urpc {
                 }()(x);
             }
         };
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wattributes"
         struct [[gnu::weak]] Client: ::shynur::udds_rpc::ClientApp::Operation {
+        #pragma GCC diagnostic pop
             const std::string m, x;
             const std::function<void(const std::exception *, std::string)> callback;
             Client(
