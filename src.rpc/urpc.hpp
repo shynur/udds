@@ -279,7 +279,16 @@ struct [[gnu::weak]] ClientApp: Application {
                 auto future = std::mem_fn(rpc)(
                     client, std::forward<decltype(args)>(args)...
                 );
-                if (future.wait_for(1s) != std::future_status::ready) {
+                if (future.wait_for([] {
+                    static const auto val = [] {
+                        const auto var = "URPC_TIMEOUT"s;
+                        const auto val = std::string{std::getenv(var.c_str()) ? std::getenv(var.c_str()) : ""};
+                        Logger{"INFO"} << "export" << var + "="s + val;
+                        return val.empty() ? "15"s : val;
+                    }();
+                    static const auto timeout = std::chrono::duration<double>{std::stod(val)};
+                    return timeout;
+                }()) != std::future_status::ready) {
                     Logger{"ERROR"}
                         << "Client RPC"
                         << "Timed Out";
