@@ -594,10 +594,13 @@ namespace rbk::urpc {
             auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
                 const std::string& m, const std::string& x
             ) -> std::string override {
-                return [this, m]() -> auto& {
+                Logger{"DBEUG"} << "rbk.urpc.server" << "immediately before call" << m << x;
+                const auto result = [this, m]() -> auto& {
                     const auto lock [[maybe_unused]] = std::shared_lock{this->methods_mutex};
                     return this->methods.at(m);
                 }()(x);
+                Logger{"DBEUG"} << "rbk.urpc.server" << "immediately after call" << m << x;
+                return result;
             }
         };
         #pragma GCC diagnostic push
@@ -617,9 +620,11 @@ namespace rbk::urpc {
                 OperationStatus op_status;
 
                 try {
+                    Logger{"DEBUG"} << "rbk.urpc.client" << "immediately before call:" << this->m << this->x;
                     op_status = this->call_rpc(
                         &::ShynurUrpcProcessor::f, result, this->m, this->x
                     );
+                    Logger{"DEBUG"} << "rbk.urpc.client" << "immediately after call";
                 } catch (const std::exception& e) {
                     callback(&e, "");
                     return OperationStatus::ERROR;
