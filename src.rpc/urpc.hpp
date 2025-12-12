@@ -594,12 +594,12 @@ namespace rbk::urpc {
             auto f(const ::ShynurUrpcProcessorServer_ClientContext&,
                 const std::string& m, const std::string& x
             ) -> std::string override {
-                Logger{"DBEUG"} << "rbk.urpc.server" << "immediately before call" << m << x;
+                Logger{"DEBUG"} << "rbk.urpc.server" << "immediately before call" << m << x;
                 const auto result = [this, m]() -> auto& {
                     const auto lock [[maybe_unused]] = std::shared_lock{this->methods_mutex};
                     return this->methods.at(m);
                 }()(x);
-                Logger{"DBEUG"} << "rbk.urpc.server" << "immediately after call" << m << x;
+                Logger{"DEBUG"} << "rbk.urpc.server" << "immediately after call" << m << x;
                 return result;
             }
         };
