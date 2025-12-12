@@ -56,10 +56,10 @@ namespace shynur::polyfill {
         println(std::cout, fmt, args...);
     }
     inline void println(std::ostream& os) {
-        println(os, "");
+        polyfill::println(os, "");
     }
     inline void println() {
-        println(std::cout);
+        polyfill::println(std::cout);
     }
 }
 
