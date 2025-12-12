@@ -1,5 +1,13 @@
 #include "urpc.hpp"
 
+struct I__ {
+    I__() {
+        ::eprosima::fastdds::dds::Log::SetVerbosity(eprosima::fastdds::dds::Log::Info);
+        ::eprosima::fastdds::dds::Log::ReportFilenames(true);
+        ::eprosima::fastdds::dds::Log::ReportFunctions(true);
+    }
+} i__;
+
 int main(const int argc, const char *const argv[]) {
     char method_num_to_call;
     auto options = ::shynur::udds_rpc::Application::Options{};
