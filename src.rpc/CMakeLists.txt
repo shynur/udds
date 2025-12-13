@@ -14,14 +14,20 @@ execute_process(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-message(STATUS "Configuring urpc calculator example...")
-file(GLOB CLIENT_SERVER_FEED_TYPES_SOURCES_CXX "*.cxx")
-file(GLOB CLIENT_SERVER_FEED_TYPES_SOURCES_IPP "*.ipp")
-file(GLOB CLIENT_SERVER_FEED_SOURCES_CPP "*.cpp")
+file(GLOB FASTDDS_GEN_CXX "*.cxx")
+file(GLOB FASTDDS_GEN_IPP "*.ipp")
+file(GLOB LIBS_CPP "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+list(REMOVE_ITEM LIBS_CPP "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp")
+
+set(SO_LIBS "")
+foreach(LIB_CPP ${LIBS_CPP})
+    get_filename_component(LIB_NAME ${LIB_CPP} NAME_WE)
+    add_library(${LIB_NAME} SHARED ${LIB_CPP})
+    list(APPEND SO_LIBS ${LIB_NAME})
+endforeach()
 
 add_executable(urpc
-    ${CLIENT_SERVER_FEED_TYPES_SOURCES_CXX}
-    ${CLIENT_SERVER_FEED_TYPES_SOURCES_IPP}
-    ${CLIENT_SERVER_FEED_SOURCES_CPP}
+    "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp"
+    ${FASTDDS_GEN_IPP} ${FASTDDS_GEN_CPP}
 )
-target_link_libraries(urpc fastdds fastcdr)
+target_link_libraries(urpc PRIVATE ${SO_LIBS})
