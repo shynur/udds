@@ -1,9 +1,11 @@
 SHELL = /bin/bash -O globstar
 
-urpc: FORCE
+urpc: build.cmake/urpc | build.cmake/
+	if ! [ -f $@ ]; then ln -s build.cmake/urpc urpc; done
+
+build.cmake/urpc: FORCE
 	$(MAKE) build.cmake/Makefile
 	cd build.cmake; $(MAKE)
-	mv -f build.cmake/urpc .
 
 build.cmake/Makefile: CMakeLists.txt ShynurUrpcProcessor.idl | build.cmake/
 	cd build.cmake;  \
@@ -19,4 +21,3 @@ clean:
 	rm -f -- ?*~ \#?*\# .\#?*\#
 	rm -rf build.cmake
 	for idl in *.idl; do rm -f $${idl%.idl}*.{{i,h}pp,cxx}; done
-	rm -f urpc
