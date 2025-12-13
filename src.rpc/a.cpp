@@ -39,7 +39,7 @@ int main(const int argc, const char *const argv[]) {
 	    cv.notify_one();
 	});
 	cv.wait(
-	    [] -> auto& {
+	    []() -> auto& {
 	        static auto m = std::mutex{};
 		static auto l = std::unique_lock{m};
 		return l;

@@ -19,15 +19,17 @@ file(GLOB FASTDDS_GEN_IPP "*.ipp")
 file(GLOB LIBS_CPP "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 list(REMOVE_ITEM LIBS_CPP "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp")
 
+
+add_library(urpc_autogen SHARED ${FASTDDS_GEN_IPP} ${FASTDDS_GEN_CXX})
+target_link_libraries(urpc_autogen PRIVATE libfastdds.so libfastcdr.so)
+
 set(SO_LIBS "")
 foreach(LIB_CPP ${LIBS_CPP})
     get_filename_component(LIB_NAME ${LIB_CPP} NAME_WE)
     add_library(${LIB_NAME} SHARED ${LIB_CPP})
+    target_link_libraries(${LIB_NAME} PRIVATE urpc_autogen)
     list(APPEND SO_LIBS ${LIB_NAME})
 endforeach()
 
-add_executable(urpc
-    "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp"
-    ${FASTDDS_GEN_IPP} ${FASTDDS_GEN_CPP}
-)
+add_executable(urpc "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp")
 target_link_libraries(urpc PRIVATE ${SO_LIBS})
