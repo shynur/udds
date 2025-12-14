@@ -21,13 +21,13 @@ list(REMOVE_ITEM LIBS_CPP "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp")
 
 
 add_library(urpc_autogen SHARED ${FASTDDS_GEN_IPP} ${FASTDDS_GEN_CXX})
-target_link_libraries(urpc_autogen PRIVATE libfastdds.so libfastcdr.so)
+target_link_libraries(urpc_autogen PRIVATE fastdds fastcdr)
 
 set(SO_LIBS "")
 foreach(LIB_CPP ${LIBS_CPP})
     get_filename_component(LIB_NAME ${LIB_CPP} NAME_WE)
     add_library(${LIB_NAME} SHARED ${LIB_CPP})
-    target_link_libraries(${LIB_NAME} PRIVATE urpc_autogen)
+    target_link_libraries(${LIB_NAME} PRIVATE urpc_autogen fastdds fastcdr)
     list(APPEND SO_LIBS ${LIB_NAME})
 endforeach()
 
