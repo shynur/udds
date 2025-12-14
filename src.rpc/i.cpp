@@ -1,12 +1,6 @@
-#ifndef URPC_EXAMPLE_AS_DECL
-    #include "urpc.hpp"
-#endif
+#include "urpc.hpp"
 
-void register_service_i()
-#ifdef URPC_EXAMPLE_AS_DECL
-;
-#else
-{
+void register_service_i() {
     static auto p = rbk::urpc::serve(
         "S", "i",
         std::function{[](int x) {
@@ -14,13 +8,8 @@ void register_service_i()
         }}
     );
 }
-#endif
 
-void call_i(int x)
-#ifdef URPC_EXAMPLE_AS_DECL
-;
-#else
-{
+void call_i(int x) {
     rbk::urpc::call(
         "S", "i",
         std::function{[](const std::exception *err, int r) noexcept {
@@ -32,4 +21,3 @@ void call_i(int x)
         x
     );
 }
-#endif

@@ -5,4 +5,4 @@
 /build.cmake/
 /ShynurUrpcProcessor*.[ih]pp
 /ShynurUrpcProcessor*.cxx
-/urpc
+/a.out

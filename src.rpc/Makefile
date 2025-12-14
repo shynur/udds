@@ -1,9 +1,9 @@
 SHELL = /bin/bash -O globstar
 
-urpc: build.cmake/urpc | build.cmake/
-	if ! [ -f $@ ]; then ln -s build.cmake/urpc urpc; fi
+a.out: build.cmake/a.out | build.cmake/
+	if ! [ -f $@ ]; then ln -s $< $@; fi
 
-build.cmake/urpc: FORCE
+build.cmake/a.out: FORCE
 	$(MAKE) build.cmake/Makefile
 	cd build.cmake; $(MAKE)
 
@@ -21,4 +21,4 @@ clean:
 	rm -f -- ?*~ \#?*\# .\#?*\#
 	rm -rf build.cmake
 	for idl in *.idl; do rm -f $${idl%.idl}*.{{i,h}pp,cxx}; done
-	rm -f urpc
+	rm -f a.out

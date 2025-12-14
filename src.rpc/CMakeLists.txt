@@ -31,5 +31,5 @@ foreach(LIB_CPP ${LIBS_CPP})
     list(APPEND SO_LIBS ${LIB_NAME})
 endforeach()
 
-add_executable(urpc "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp")
-target_link_libraries(urpc PRIVATE ${SO_LIBS})
+add_executable(a.out "${CMAKE_CURRENT_SOURCE_DIR}/a.cpp")
+target_link_libraries(a.out PRIVATE ${SO_LIBS})

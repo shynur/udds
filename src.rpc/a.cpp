@@ -1,9 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std::literals;
-#define URPC_EXAMPLE_AS_DECL
-#include "i.cpp"
-#include "d.cpp"
-#include "v.cpp"
+#include "h.hpp"
 
 // struct I__ {
 //     I__() {
