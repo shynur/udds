@@ -3,8 +3,9 @@ SHYNUR_ISA := $(shell ([ $$HOSTTYPE = x86_64 ]&&echo x64)||([ $$HOSTTYPE = aarch
 SHYNUR_UBUNTU_VER := $(shell cat /etc/os-release | grep VERSION_ID | cut -d '"' -f2 | tr -d '.')
 CMAKE_BUILD_DIR := build.cmake.$(SHYNUR_ISA)-ubuntu$(SHYNUR_UBUNTU_VER)
 
-a.out: $(CMAKE_BUILD_DIR)/a.out | $(CMAKE_BUILD_DIR)/
-	if ! [ -f $@ ]; then ln -s $< $@; fi
+a.out: FORCE
+	$(MAKE) $(CMAKE_BUILD_DIR)/a.out
+	ln -f -s $< $@
 
 $(CMAKE_BUILD_DIR)/a.out: FORCE
 	$(MAKE) `dirname $@`/Makefile
