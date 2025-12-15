@@ -1,5 +1,7 @@
 #pragma once
 
+constexpr auto server_name = "S";
+
 void register_service_i();
 void call_i(int);
 
