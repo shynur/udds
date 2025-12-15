@@ -4,11 +4,8 @@ using namespace std::literals;
 #include "shynur-polyfill.hpp"
 
 namespace shynur::utils {
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wattributes"
     template <class Config>
-    struct [[gnu::weak]] Logger {
-    #pragma GCC diagnostic pop
+    struct Logger {
         static inline std::atomic_bool enabled = [](const char *const var) -> bool {
             const auto val = std::string{std::getenv(var) ? std::getenv(var) : ""};
             std::println(
